@@ -3,6 +3,9 @@ const app = express();
 const PORT = 5000;
 const cors = require("cors");
 app.use(cors());
+
+const client = require("./redis");
+
 const { createServer } = require("node:http");
 const { Server } = require("socket.io");
 const { Socket } = require("node:dgram");
@@ -13,21 +16,35 @@ const io = new Server(server, {
   },
 });
 
+
 app.get("/", (req, res) => {
   console.log("get/ ok");
   res.json({ answer: "express ok" });
 });
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("connected");
-  socket.join(socket.handshake.room);
+  const room = socket.handshake.query.room;
+  const str_ = JSON.stringify([{fild1: 1, fild2: 2}, {fild1: 3, fild2: 4}]);
+  socket.join(room);
+  await client.set(room, str_);
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("diconnected");
+    const room = socket.handshake.query.room;
+    const membersSet = io.sockets.adapter.rooms.get(room);
+    if (!membersSet){
+      await client.del(room);
+      console.log("room key deleted from redis");
+    }
   });
 
-  socket.on("player-click", (cellId) =>{
-    const membersSet = io.sockets.adapter.rooms.get(socket.handshake.room);
+  socket.on("player-click", async (cellId) =>{
+
+    //const room = socket.handshake.query.room;
+    //console.log( await client.get(room));
+
+    const membersSet = io.sockets.adapter.rooms.get(socket.handshake.query.room);
     const membersArray = Array.from(membersSet);
     const callback = (id) => id === socket.id;
     const playerNumber = membersArray.findIndex(callback) + 1;
@@ -39,7 +56,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("am-I-first-to-play", () => {
-    const membersSet = io.sockets.adapter.rooms.get(socket.handshake.room);
+    const membersSet = io.sockets.adapter.rooms.get(socket.handshake.query.room);
     const membersArray = Array.from(membersSet);
     const callback = (id) => id === socket.id;
     const playerNumber = membersArray.findIndex(callback) + 1;

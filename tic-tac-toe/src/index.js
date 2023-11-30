@@ -48,7 +48,7 @@ function Cell({ id, image, addStyle, handleClick }) {
 function TicTactoeGridOfCells() {
   const [myTurn, setMyTurn] = React.useState(false);
   const [cellsRows, setCellsRows] = React.useState(cellsRows_);
-  const socket = React.useMemo(() => io(URL, {autoConnect: false, room: "room_test"}), [0]);
+  const socket = React.useMemo(() => io(URL, {autoConnect: false, query: {room: "room_test"}}), [0]);
  
   React.useEffect(() => {
     socket.connect();
