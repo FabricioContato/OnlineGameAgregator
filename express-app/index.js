@@ -43,8 +43,8 @@ io.on("connection", async (socket) => {
 
     //const room = socket.handshake.query.room;
     //console.log( await client.get(room));
-
-    const membersSet = io.sockets.adapter.rooms.get(socket.handshake.query.room);
+    const room = socket.handshake.query.room
+    const membersSet = io.sockets.adapter.rooms.get(room);
     const membersArray = Array.from(membersSet);
     const callback = (id) => id === socket.id;
     const playerNumber = membersArray.findIndex(callback) + 1;
@@ -52,7 +52,7 @@ io.on("connection", async (socket) => {
     const callback_ = (id) => id !== socket.id;
     const playerOfTheTurnId = membersArray.find(callback_);
 
-    io.emit("player-click", cellId, simble, playerOfTheTurnId);
+    io.to(room).emit("player-click", cellId, simble, playerOfTheTurnId);
   });
 
   socket.on("am-I-first-to-play", () => {
