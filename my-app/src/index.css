@@ -1,0 +1,46 @@
+body {
+  background-color: #cccccc;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+nav.a {
+  color: white;
+}
+
+nav {
+  height: 60px;
+}
+
+.btn-primary, .btn-primary:active, .btn-primary:visited {
+  background-color: #6b4f8a !important;
+  border-color: #6b4f8a !important;
+}
+
+.btn-primary:hover{
+  background-color: rgb(82, 64, 105) !important;
+}
+
+#user_picture{
+  height: 25px ;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.code{
+  text-align: center;
+  padding: 10%;
+}
+
+input[name="roomCode"] {
+  border-color: black;
+}
