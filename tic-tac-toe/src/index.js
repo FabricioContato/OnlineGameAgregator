@@ -5,11 +5,15 @@ import reportWebVitals from "./reportWebVitals";
 import xImage from "./x.png";
 import circleImage from "./circle.png";
 import blankImage from "./blank.png";
+import noUserImage from "./no_image_user.png";
 
 import { io } from 'socket.io-client';
 const URL = "http://localhost:5000";
 
-
+function TicTacToe(){
+  return (<><Players />
+          <TicTactoeGridOfCells /></>);
+}
 
 function Cell({ id, imageCode, handleClick }) {
   let style = {
@@ -118,6 +122,7 @@ function TicTactoeGridOfCells() {
   const cellsComponentsRows = cellsRows.map((row) => {
     return row.map((cell) => {
       return (
+        <React.StrictMode>
         <div className="col-4 m-1 p-0" style={colStyle}>
         <Cell
           key={cell.id}
@@ -126,6 +131,7 @@ function TicTactoeGridOfCells() {
           handleClick={() => handleClick(cell.id)}
         />
         </div>
+        </React.StrictMode>
       );
     });
   });
@@ -153,13 +159,43 @@ function TicTactoeGridOfCells() {
   );
 }
 
+function Player({userName, active, addClass}){
+  const style = active ?  {backgroundColor: "#FDC676", border: "5px solid"} : {backgroundColor: "#FDC676", border: "5px solid #008800"};
+  return(
+    <div className={"container-fluid " + addClass} style={style}>
+    <div className="row ">
+      <img className="image-fluid w-25 col-4" src={noUserImage} alt="no user" />
+      <div className="col-8">
+        {/* <p>Player 1:</p> */}
+        <p>{userName}</p>
+      </div>
+    </div>
+    </div>
+  );
+}
+
+const mockPlayers = [{userName: "user1", active: true, addClass: "col-6"},{userName: "user2", active: false, addClass: "col-6"}];
+
+function Players(){
+  const [players, setPlayers] = React.useState(mockPlayers);
+
+  const elements = players.map((player)=>{
+    return <Player userName={player.userName} active={player.active} addClass={player.addClass} />
+  });
+
+  return(<React.StrictMode>
+        <div className="row">
+           {elements}
+         </div>
+         </React.StrictMode>);
+
+}
+
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-      <TicTactoeGridOfCells />
-    
-
-    <div className="container">1234566</div>
+      <TicTacToe/>
   </React.StrictMode>
 );
 

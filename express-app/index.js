@@ -38,17 +38,51 @@ const startCellsRowsList = [
     { id: 8, imageSimbleCode: "blank" },
   ],
 ];
-io.on("connection", async (socket) => {
+
+async function jsonStringIntoRedis(key, json){
+  const jsonStr = JSON.stringify(json);
+  return await client.set(key, jsonStr);
+}
+
+async function getJsonFromJsonStringFromRedis(key){
+  const jsonStr = await client.get(key);
+  return JSON.parse(jsonStr); 
+}
+
+async function connection(socket){
   console.log("connected");
   const room = socket.handshake.query.room;
   socket.join(room);
 
-  const roomAlreadyExists = await client.get(room);
-  if (!roomAlreadyExists) {
+  let roomJson = await getJsonFromJsonStringFromRedis(room);
+  if (!roomJson) {
     const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
-    await client.set(room, startCellsRowsListStr);
-    await client.set('playerOfTheTurn', socket.id);
+    roomJson = {cellsRows: startCellsRowsListStr,
+                playerOfTheTurn : socket.id,
+                players : [socket.id]};
+    await jsonStringIntoRedis(room, roomJson);
+    return '';
   }
+  
+  if(roomJson.players.includes(socket.id)){
+    console.log('welcome back!');
+    return '';
+  }
+
+  if(roomJson.players.length > 1){
+    console.log('full room. you was desconnected');
+    //console.log(`${roomJson.players} ${ socket.id}`);
+    socket.disconnect();
+    return '';
+  }
+  
+  roomJson.players.push(socket.id);
+  await jsonStringIntoRedis(room, roomJson);
+}
+
+io.on("connection", async (socket) => {
+  
+  await connection(socket);
 
   socket.on("disconnect", async () => {
     console.log("diconnected");
@@ -62,13 +96,17 @@ io.on("connection", async (socket) => {
 
   socket.on("player-click", async (cellId) => {
 
-    const playerOfTheTurn = await client.get("playerOfTheTurn");
+    const room = socket.handshake.query.room;
+    
+    const roomJson = await getJsonFromJsonStringFromRedis(room);
+    const playerOfTheTurn = roomJson.playerOfTheTurn;
+    //console.log(`requesting player: ${socket.id} ; player of the turn ${playerOfTheTurn}`);
     if(playerOfTheTurn !== socket.id){
       console.log("not your turn");
       return 'none';
     }
 
-    const room = socket.handshake.query.room;
+    
     const membersSet = io.sockets.adapter.rooms.get(room);
     const membersArray = Array.from(membersSet);
 
@@ -79,7 +117,7 @@ io.on("connection", async (socket) => {
 
     const rowIndex = Math.floor(cellId / 3);
     const cellIndex = cellId - rowIndex * 3;
-    const cellsRowsStr = await client.get(room)
+    const cellsRowsStr = roomJson.cellsRows;
     //console.log(cellsRowsStr);
     const cellsRows = JSON.parse(cellsRowsStr);
     const currentCellCode = cellsRows[rowIndex][cellIndex].imageSimbleCode
@@ -94,18 +132,25 @@ io.on("connection", async (socket) => {
     
     cellsRows[rowIndex][cellIndex].imageSimbleCode = newImageSimbleCode;
     const newCellsRoowsStr = JSON.stringify(cellsRows);
-    await client.set(room, newCellsRoowsStr);
+    roomJson.cellsRows = newCellsRoowsStr;
+
 
     const callback_ = (id) => id !== socket.id;
     const newPlayerOfTheTurn = membersArray.find(callback_);
+    roomJson.playerOfTheTurn = newPlayerOfTheTurn
 
-    await client.set("playerOfTheTurn", newPlayerOfTheTurn);
+    await jsonStringIntoRedis(room, roomJson);
 
     io.to(room).emit("player-click", cellsRows, newPlayerOfTheTurn);
   });
 
-  socket.on("am-I-first-to-play", () => {
-    const membersSet = io.sockets.adapter.rooms.get(
+  socket.on("am-I-first-to-play", async () => {
+    const room = socket.handshake.query.room;
+    const roomJson = await getJsonFromJsonStringFromRedis(room)
+    //console.log(roomJson);
+    const anwser = roomJson.players[0];
+    socket.emit("am-I-first-to-play", anwser);
+    /* const membersSet = io.sockets.adapter.rooms.get(
       socket.handshake.query.room
     );
     const membersArray = Array.from(membersSet);
@@ -113,7 +158,7 @@ io.on("connection", async (socket) => {
     const playerNumber = membersArray.findIndex(callback) + 1;
     const anwser = playerNumber === 1;
 
-    socket.emit("am-I-first-to-play", anwser);
+    socket.emit("am-I-first-to-play", anwser); */
   });
 
   socket.on("newRoom", (newRoomJson, callback) => {
