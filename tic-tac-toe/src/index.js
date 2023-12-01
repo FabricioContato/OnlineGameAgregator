@@ -9,30 +9,28 @@ import blankImage from "./blank.png";
 import { io } from 'socket.io-client';
 const URL = "http://localhost:5000";
 
-const cellsRows_ = [
-  [
-    { id: 0, color: "#ff0000", image: blankImage, addStyle: {borderRight: "2px solid black", borderLeft: "none"           , borderTop: "none"           , borderBottom: "2px solid black"} },
-    { id: 1, color: "#ff0000", image: blankImage, addStyle: {borderRight: "2px solid black", borderLeft: "none"           , borderTop: "2px solid black", borderBottom: "2px solid black"} },
-    { id: 2, color: "#ff0000", image: blankImage, addStyle: {borderRight: "2px solid black", borderLeft: "none"           , borderTop: "2px solid black", borderBottom: "none"           }  },
-  ],
-  [
-    { id: 3, color: "#ff0000", image: blankImage, addStyle: {borderRight: "2px solid black", borderLeft: "2px solid black", borderTop: "none"           , borderBottom: "2px solid black"}  },
-    { id: 4, color: "#ff0000", image: blankImage, addStyle: {borderRight: "2px solid black", borderLeft: "2px solid black", borderTop: "2px solid black", borderBottom: "2px solid black"}  },
-    { id: 5, color: "#ff0000", image: blankImage, addStyle: {borderRight: "2px solid black", borderLeft: "2px solid black", borderTop: "2px solid black", borderBottom: "none"           }  },
-  ],
-  [
-    { id: 6, color: "#ff0000", image: blankImage, addStyle: {borderRight: "none"           , borderLeft: "2px solid black", borderTop: "none"           , borderBottom: "2px solid black"}  },
-    { id: 7, color: "#ff0000", image: blankImage, addStyle: {borderRight: "none"           , borderLeft: "2px solid black", borderTop: "2px solid black", borderBottom: "2px solid black", padding: "2px"}  },
-    { id: 8, color: "#ff0000", image: blankImage, addStyle: {borderRight: "none"           , borderLeft: "2px solid black", borderTop: "2px solid black", borderBottom: "none"           }  },
-  ],
-];
 
-function Cell({ id, image, addStyle, handleClick }) {
+
+function Cell({ id, imageCode, handleClick }) {
   let style = {
     width: "100%",
     height: "100%",
   }
-  //style = {...style, ...addStyle};
+  let imageUrl;
+  switch (imageCode){
+    case 'blank':
+      imageUrl = blankImage;
+      break;
+    
+    case 'x':
+      imageUrl = xImage;
+      break;
+
+    case 'circle':
+      imageUrl = circleImage;
+      break;
+  }
+
   return (
     <div
       className="container p-0"
@@ -40,36 +38,40 @@ function Cell({ id, image, addStyle, handleClick }) {
       id={id}
       onClick={handleClick}
     >
-      <img className="img-fluid" src={image}/>
+      <img className="img-fluid" src={imageUrl}/>
     </div>
   );
 }
 
+const startCellsRowsList = [
+  [
+    { id: 0, imageSimbleCode: "blank" },
+    { id: 1, imageSimbleCode: "blank" },
+    { id: 2, imageSimbleCode: "blank" },
+  ],
+  [
+    { id: 3, imageSimbleCode: "blank" },
+    { id: 4, imageSimbleCode: "blank" },
+    { id: 5, imageSimbleCode: "blank" },
+  ],
+  [
+    { id: 6, imageSimbleCode: "blank" },
+    { id: 7, imageSimbleCode: "blank" },
+    { id: 8, imageSimbleCode: "blank" },
+  ],
+];
+
 function TicTactoeGridOfCells() {
   const [myTurn, setMyTurn] = React.useState(false);
-  const [cellsRows, setCellsRows] = React.useState(cellsRows_);
+  const [cellsRows, setCellsRows] = React.useState(startCellsRowsList);
   const socket = React.useMemo(() => io(URL, {autoConnect: false, query: {room: "room_test"}}), [0]);
  
   React.useEffect(() => {
     socket.connect();
 
-    function updateCellsRows(cellId, simble){
-      const rowIndex = Math.floor(cellId / 3);
-      const cellIndex = cellId - rowIndex * 3;
-      const newImage = simble === "x" ? xImage : circleImage;
-
-      setCellsRows( prevCellsRows => {
-        const preCellsRowsDeepClone = JSON.parse(JSON.stringify(prevCellsRows));
-        preCellsRowsDeepClone[rowIndex][cellIndex].image = newImage;
-        return preCellsRowsDeepClone;
-      } );
-    }
-    function isMyTurn(playerOfTheTurnId){
+    function cellClickHandler(cellsRows, playerOfTheTurnId){
+      setCellsRows(cellsRows);
       setMyTurn(playerOfTheTurnId === socket.id);
-    }
-    function cellClickHandler(cellId, simble, playerOfTheTurnId){
-      updateCellsRows(cellId, simble);
-      isMyTurn(playerOfTheTurnId);
     }
     socket.on("player-click", cellClickHandler);
 
@@ -89,12 +91,7 @@ function TicTactoeGridOfCells() {
   }, [0]);
 
   function handleClick(id){
-    if (myTurn){
-      socket.emit("player-click", id);
-    
-    }else{
-      console.log("it is not your turn!");
-    }
+    socket.emit("player-click", id);
       
   }
 
@@ -125,8 +122,7 @@ function TicTactoeGridOfCells() {
         <Cell
           key={cell.id}
           id={cell.id}
-          image={cell.image}
-          addStyle={cell.addStyle}
+          imageCode={cell.imageSimbleCode}
           handleClick={() => handleClick(cell.id)}
         />
         </div>
