@@ -27,7 +27,9 @@ app.get("/", (req, res) => {
 io.on("connection", async (socket) => {
   //const anwser = await client.get("test_key");
   //console.log(anwser);
-  await ticTacToeSocketHandler(socket, io);
+  if(socket.handshake.query.rootype === 'tic-tac-toe'){
+    await ticTacToeSocketHandler(socket, io);
+  }
 });
 
 server.listen(PORT, () => console.log(`Express app listening at port ${PORT}`));

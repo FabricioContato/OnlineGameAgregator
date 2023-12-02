@@ -1,27 +1,9 @@
 import "./App.css";
-import NewRoomForm from "./components/NewRoomForm";
-import JoinRoom from "./components/JoinRoom";
-import News from "./components/News";
-import Nav from "./components/Nav";
-import heroImage from "./components/jklm_hero_image_react_bootstrap.png";
+import Home from "./pages/Home";
 
 function App() {
   return (
-    <>
-      <Nav />
-      <img className="img-fluid" src={heroImage}></img>
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col-lg-6 col-md-12">
-            <NewRoomForm />
-          </div>
-          <div className="col-lg-6">
-            <JoinRoom />
-            <News />
-          </div>
-        </div>
-      </div>
-    </>
+    <Home/>
   );
 }
 
