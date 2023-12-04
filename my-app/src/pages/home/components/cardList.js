@@ -1,8 +1,8 @@
-import tetrisImage from "./tetris_card_image.png"
-import checkerImage from "./Checker_card_image.png"
-import bombGameImage from "./Bomb_game_card_image.png"
-import chessImage from "./Chess_card_image.png"
-import LudoImage from "./Ludo_card_image.png"
+import tetrisImage from "./images/tetris_card_image.png"
+import checkerImage from "./images/Checker_card_image.png"
+import bombGameImage from "./images/Bomb_game_card_image.png"
+import chessImage from "./images/Chess_card_image.png"
+import LudoImage from "./images/Ludo_card_image.png"
 
 export const cardList = [
   {

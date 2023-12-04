@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import {cardList} from "./cardList";
 import {socket} from "./socketHandler";
+import {Link} from "react-router-dom";
 
 const radioButtonsList = [
   {
@@ -139,13 +140,15 @@ function NewRoomForm() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    socket.timeout(3000).emit("newRoom", formData, (err, response) => {
+    const url = "localhost:5000/newRomm";
+    fetch()
+    /* socket.timeout(3000).emit("newRoom", formData, (err, response) => {
       if(err){
         console.log("server did not acknowledge the event in the given delay");
       }else{
         console.log(response.status);
       }
-    })
+    }) */
   }
 
   function handleClick(name, value){
@@ -180,11 +183,10 @@ function NewRoomForm() {
         <ButtonGroup radioButtons={radioButtons} handleChange={handleChange} />
       </div>
       <div className="col-sm-2 m-sm-0 col-4 m-1">
-        <input
+        <Link to={`test/${formData.roomCode}`}
           className="btn btn-primary form-control"
-          type="submit"
-          value="Start"
-        />
+        >Start
+        </Link>
       </div>
     </form>
       </div>

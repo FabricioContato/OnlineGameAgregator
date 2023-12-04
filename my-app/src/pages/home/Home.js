@@ -1,10 +1,10 @@
 import React from "react";
 
-import NewRoomForm from "../components/NewRoomForm";
-import JoinRoom from "../components/JoinRoom";
-import News from "../components/News";
-import Nav from "../components/Nav";
-import heroImage from "../components/jklm_hero_image_react_bootstrap.png";
+import NewRoomForm from "./components/NewRoomForm";
+import JoinRoom from "./components/JoinRoom";
+import News from "./components/News";
+import Nav from "./components/Nav";
+import heroImage from "./components/images/jklm_hero_image_react_bootstrap.png";
 
 function Home(){
     return (

@@ -4,8 +4,6 @@ const PORT = 5000;
 const cors = require("cors");
 app.use(cors());
 
-//const client = require("./redis");
-
 const { createServer } = require("node:http");
 const { Server } = require("socket.io");
 const { Socket } = require("node:dgram");
@@ -22,7 +20,9 @@ app.get("/", (req, res) => {
   res.json({ answer: "express ok" });
 });
 
-
+app.post("/newRoom", async (req, res) => {
+  res.json({ anwser:"hello world!"});
+})
 
 io.on("connection", async (socket) => {
   //const anwser = await client.get("test_key");
