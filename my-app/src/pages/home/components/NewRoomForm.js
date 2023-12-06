@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import {cardList} from "./cardList";
-import {socket} from "./socketHandler";
-import {Link} from "react-router-dom";
+import { cardList } from "./cardList";
+import { socket } from "./socketHandler";
+import { Link } from "react-router-dom";
 
 const radioButtonsList = [
   {
@@ -10,7 +10,7 @@ const radioButtonsList = [
     autoComplete: "off",
     checked: false,
     name: "roomPrivace",
-    value: "Public"
+    value: "Public",
   },
   {
     type: "radio",
@@ -18,27 +18,38 @@ const radioButtonsList = [
     autoComplete: "off",
     checked: false,
     name: "roomPrivace",
-    value: "Private"
+    value: "Private",
   },
 ];
 
 function Card({ url, id, name, title, text, active, cardClick }) {
-    const cardStyle = active
-      ? { backgroundColor: "#888888", borderColor: "#888888", height: "280px" }
-      : { backgroundColor: "#ffffff", borderColor: "#000000", height: "280px" };
-  
-    return (
-      <div className="card" style={cardStyle} onClick={cardClick} id={id} name={name}>
-        <img className="card-img-top" src={url} alt="" />
-        <div className="card-body">
-          <div className="card-title" style={{height: "50px", textAlign: "center"}}>{title}</div>
-          <div className="card-text d-none d-sm-block">{text}</div>
+  const cardStyle = active
+    ? { backgroundColor: "#888888", borderColor: "#888888", height: "280px" }
+    : { backgroundColor: "#ffffff", borderColor: "#000000", height: "280px" };
+
+  return (
+    <div
+      className="card"
+      style={cardStyle}
+      onClick={cardClick}
+      id={id}
+      name={name}
+    >
+      <img className="card-img-top" src={url} alt="" />
+      <div className="card-body">
+        <div
+          className="card-title"
+          style={{ height: "50px", textAlign: "center" }}
+        >
+          {title}
         </div>
+        <div className="card-text d-none d-sm-block">{text}</div>
       </div>
-    );
+    </div>
+  );
 }
 
-function ButtonGroup({radioButtons, handleChange}) {
+function ButtonGroup({ radioButtons, handleChange }) {
   const radioButtonElements = radioButtons.map((radioButton, index) => {
     return (
       <label className="btn btn-secondary" key={index}>
@@ -50,8 +61,8 @@ function ButtonGroup({radioButtons, handleChange}) {
           checked={radioButton.checked}
           onChange={handleChange}
           value={radioButton.value}
-          
-        /> {radioButton.value}
+        />{" "}
+        {radioButton.value}
       </label>
     );
   });
@@ -89,28 +100,27 @@ function NewRoomForm() {
   const [formData, setFormData] = React.useState({
     roomCode: "",
     roomPrivace: "Public",
-    roomType: ""
+    roomType: "",
   });
 
   useEffect(() => {
-    socket.connect()
+    socket.connect();
 
-    function messageHandler(msg){
-      console.log(msg)
+    function messageHandler(msg) {
+      console.log(msg);
     }
 
     socket.on("message", messageHandler);
 
     return () => {
       socket.off("message", messageHandler);
-    }
-
+    };
   }, [0]);
 
-  function setActiveCard(cardList){
-    return cardList.map(card => {
-      return card.id === formData.roomType ? {...card, active: true } : card;
-    })
+  function setActiveCard(cardList) {
+    return cardList.map((card) => {
+      return card.id === formData.roomType ? { ...card, active: true } : card;
+    });
   }
 
   const cards = setActiveCard(cardList);
@@ -133,7 +143,7 @@ function NewRoomForm() {
     setFormData((prevFormData) => {
       return {
         ...prevFormData,
-        [name]: event.target.value
+        [name]: event.target.value,
       };
     });
   }
@@ -141,7 +151,7 @@ function NewRoomForm() {
   function handleSubmit(event) {
     event.preventDefault();
     const url = "localhost:5000/newRomm";
-    fetch()
+    fetch();
     /* socket.timeout(3000).emit("newRoom", formData, (err, response) => {
       if(err){
         console.log("server did not acknowledge the event in the given delay");
@@ -151,46 +161,56 @@ function NewRoomForm() {
     }) */
   }
 
-  function handleClick(name, value){
+  function handleClick(name, value) {
     //console.log("ok");
-    setFormData(prevFormData => { return {...prevFormData, [name]: value} })
+    setFormData((prevFormData) => {
+      return { ...prevFormData, [name]: value };
+    });
   }
 
   return (
     <React.StrictMode>
-    <div className="container p-2 m-lg-2 mt-2 mb-2" style={{ backgroundColor: "#eeeeee" }}>
       <div
-        className="container-fluid p-2"
-        style={{ borderStyle: "dashed", borderColor: "#aaaaaa" }}
+        className="container p-2 m-lg-2 mt-2 mb-2"
+        style={{ backgroundColor: "#eeeeee" }}
       >
-        <div className="contaienr"> Start a new room</div>
-        <CardOptions cards={cards} cardClick={handleClick} />
-        <hr />
-        <form className="row" onSubmit={handleSubmit}>
-      <div className="col-sm-2 m-sm-0 col-2 m-1">
-        <div className="code">Code</div>
+        <div
+          className="container-fluid p-2"
+          style={{ borderStyle: "dashed", borderColor: "#aaaaaa" }}
+        >
+          <div className="contaienr"> Start a new room</div>
+          <CardOptions cards={cards} cardClick={handleClick} />
+          <hr />
+          <form className="row" onSubmit={handleSubmit}>
+            <div className="col-sm-2 m-sm-0 col-2 m-1">
+              <div className="code">Code</div>
+            </div>
+            <div className="col-sm-4 m-sm-0 col-8 m-1">
+              <input
+                className="form-control"
+                type="text"
+                name="roomCode"
+                onChange={handleChange}
+                value={formData.roomCode}
+              />
+            </div>
+            <div className="col-sm-4 m-sm-0 col-6 m-1">
+              <ButtonGroup
+                radioButtons={radioButtons}
+                handleChange={handleChange}
+              />
+            </div>
+            <div className="col-sm-2 m-sm-0 col-4 m-1">
+              <Link
+                to={`test/${formData.roomCode}`}
+                className="btn btn-primary form-control"
+              >
+                Start
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
-      <div className="col-sm-4 m-sm-0 col-8 m-1">
-        <input
-          className="form-control"
-          type="text"
-          name="roomCode"
-          onChange={handleChange}
-          value={formData.roomCode}
-        />
-      </div>
-      <div className="col-sm-4 m-sm-0 col-6 m-1">
-        <ButtonGroup radioButtons={radioButtons} handleChange={handleChange} />
-      </div>
-      <div className="col-sm-2 m-sm-0 col-4 m-1">
-        <Link to={`test/${formData.roomCode}`}
-          className="btn btn-primary form-control"
-        >Start
-        </Link>
-      </div>
-    </form>
-      </div>
-    </div>
     </React.StrictMode>
   );
 }
