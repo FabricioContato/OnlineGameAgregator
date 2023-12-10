@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLoaderData } from "react-router-dom";
 import Players from "./components/Players";
 import TicTactoeGridOfCells from "./components/Tictacttoegrid";
 import { io } from "socket.io-client";
@@ -7,7 +7,7 @@ const URL = "http://localhost:5000";
 
 
 export async function loader({ params }){
-  const socket = io(URL, { query: { room: params.code } })
+  const socket = io(URL, { query: { room: params.code, rootype: 'tic-tac-toe' } })
   try {
     const response = await socket.timeout(5000).emitWithAck('room-state');
     return {...response, socket: socket};
@@ -16,27 +16,9 @@ export async function loader({ params }){
   }
 }
 
-const mockPlayers = [
+const inactivePlayers = [
   { userName: "...", active: false, addClass: "col-6" },
   { userName: "...", active: false, addClass: "col-6" },
-];
-
-const startCellsRowsList = [
-  [
-    { id: 0, imageSimbleCode: "blank" },
-    { id: 1, imageSimbleCode: "blank" },
-    { id: 2, imageSimbleCode: "blank" },
-  ],
-  [
-    { id: 3, imageSimbleCode: "blank" },
-    { id: 4, imageSimbleCode: "blank" },
-    { id: 5, imageSimbleCode: "blank" },
-  ],
-  [
-    { id: 6, imageSimbleCode: "blank" },
-    { id: 7, imageSimbleCode: "blank" },
-    { id: 8, imageSimbleCode: "blank" },
-  ],
 ];
 
 /* export function loader(){
@@ -44,29 +26,25 @@ const startCellsRowsList = [
 } */
 
 function TicTacToe() {
-  const  par = useParams();
-  //const [myTurn, setMyTurn] = React.useState(false);
-  const [cellsRows, setCellsRows] = React.useState(startCellsRowsList);
-  const socket = React.useMemo(
-    () => io(URL, { autoConnect: false, query: { room: par.code } }),
-    [0]
-  );
-  const [players, setPlayers] = React.useState(mockPlayers);
+  const data = useLoaderData();
+  const socket = data.socket;
+  const [cellsRows, setCellsRows] = React.useState(data.cellsRows);
+  const [players, setPlayers] = React.useState(newPlayers(data.playerOfTheTurnId));
 
-  //console.log(socket.handShake.query.room);
+  function newPlayers(playerOfTheTurnId){
+    const newPlayers = JSON.parse(JSON.stringify(inactivePlayers));
+        for (let i = 0; i < newPlayers.length; i++) {
+          newPlayers[i].active = newPlayers[i].userName === playerOfTheTurnId;
+        }
+        return newPlayers;
+  }
 
   React.useEffect(() => {
     socket.connect();
 
     function cellClickHandler(cellsRows, playerOfTheTurnId) {
       setCellsRows(cellsRows);
-      setPlayers((prevPlayers) => {
-        const newPlayers = JSON.parse(JSON.stringify(prevPlayers));
-        for (let i = 0; i < newPlayers.length; i++) {
-          newPlayers[i].active = newPlayers[i].userName === playerOfTheTurnId;
-        }
-        return newPlayers;
-      });
+      setPlayers(newPlayers(playerOfTheTurnId));
     }
     socket.on("player-click", cellClickHandler);
 

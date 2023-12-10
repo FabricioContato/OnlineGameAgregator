@@ -151,10 +151,12 @@ function NewRoomForm() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const url = "localhost:5000/newRomm";
-    const mesageStatus = await fetch(url).then(response => response.status);
+    const url = "http://127.0.0.1:5000/newRoom";
+    const data = {roomCode: formData.roomCode};
+    const postJson = { method: "POST", headers: {"Content-Type": "application/json",}, body: JSON.stringify(data)}
+    const mesageStatus = await fetch(url, postJson).then(response => response.status);
     
-    if(mesageStatus == 200){
+    if(mesageStatus === 200){
       navigate(`/test/${formData.roomCode}`);
     }else{
       console.log(`message status: ${formData.roomCode} \n Room was not created.`)
