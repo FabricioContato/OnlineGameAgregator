@@ -3,6 +3,8 @@ const app = express();
 const PORT = 5000;
 const cors = require("cors");
 app.use(cors());
+const bodyParser = require('body-parser');
+app.use(express.urlencoded({ extended: true }));
 
 const {client, jsonStringIntoRedis, getJsonFromJsonStringFromRedis} = require("./redis");
 
@@ -27,17 +29,21 @@ app.get("/", (req, res) => {
 });
 
 app.post("/newRoom", async (req, res) => {
+  console.log("new room route");
   const body = req.body;
+  console.log(body);
   const roomCode = body.roomCode;
   const anwser = getJsonFromJsonStringFromRedis(roomCode);
 
   if(anwser){
+    console.log("new room route failed");
     res.sendStatus(CONFLICT_STATUS).end();
-  }
 
-  createNewTictactoeRoom(roomCode);
+  }else{
+    createNewTictactoeRoom(roomCode);
+    res.sendStatus(OK_STATUS).end();
   
-  res.sendStatus(OK_STATUS).end();
+  }
 })
 
 io.on("connection", async (socket) => {

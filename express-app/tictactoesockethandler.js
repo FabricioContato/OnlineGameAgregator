@@ -21,6 +21,7 @@ const startCellsRowsList = [
 async function createNewTictactoeRoom(roomCode){
   const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
     roomJson = {
+      roomType: "tic-tac-toe",
       cellsRows: startCellsRowsListStr,
       playerOfTheTurn: null,
       players: [],
