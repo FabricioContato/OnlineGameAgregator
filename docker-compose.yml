@@ -1,0 +1,66 @@
+version: "3"
+
+services:
+  redis:
+    image: redis:alpine
+  
+    networks:
+      - "re-ex"
+  
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      
+  express:
+    image: node:alpine
+
+    volumes:
+      - ./express-app/:/code
+    
+    working_dir: /code/
+
+    depends_on:
+      - redis
+    
+    networks:
+      - "re-ex"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000 || exit 1"]
+      interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    ports:
+      - "5000:5000"
+
+    command: node index.js
+
+  react:
+    image: node:alpine
+
+    volumes:
+      - ./my-app/:/code
+
+    working_dir: /code/
+
+    depends_on:
+      - express
+
+    networks:
+      - "re-ex"
+
+    command: npm start
+
+    ports:
+        - "3000:3000"
+
+    
+
+networks:
+  re-ex:
+    driver: bridge

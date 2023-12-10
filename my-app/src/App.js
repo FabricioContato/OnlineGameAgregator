@@ -8,7 +8,7 @@ import { RouterProvider, createBrowserRouter, createRoutesFromElements, Link, Ro
 const routers = createBrowserRouter(createRoutesFromElements(
   <>
   <Route path="/" element={<Home />} />
-  <Route path="/test/:code" element={<TicTacToe />} />
+  <Route path="/test/:code" element={<TicTacToe />} loader={()=> false} />
   </>
 ));
 

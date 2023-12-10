@@ -1,4 +1,4 @@
-const client = require("./redis");
+const {client, jsonStringIntoRedis, getJsonFromJsonStringFromRedis} = require("./redis");
 
 const startCellsRowsList = [
   [
@@ -18,16 +18,17 @@ const startCellsRowsList = [
   ],
 ];
 
-async function jsonStringIntoRedis(key, json) {
-  const jsonStr = JSON.stringify(json);
-  return await client.set(key, jsonStr);
+async function createNewTictactoeRoom(roomCode){
+  const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
+    roomJson = {
+      cellsRows: startCellsRowsListStr,
+      playerOfTheTurn: null,
+      players: [],
+    };
+    await jsonStringIntoRedis(roomCode, roomJson);
+
 }
 
-async function getJsonFromJsonStringFromRedis(key) {
-  //console.log('getJsonFromJsonStringFromRedis');
-  const jsonStr = await client.get(key);
-  return JSON.parse(jsonStr);
-}
 
 async function connection(socket, io) {
   console.log("connected");
@@ -35,7 +36,7 @@ async function connection(socket, io) {
   socket.join(room);
 
   let roomJson = await getJsonFromJsonStringFromRedis(room);
-  if (!roomJson) {
+  /* if (!roomJson) {
     const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
     roomJson = {
       cellsRows: startCellsRowsListStr,
@@ -49,14 +50,14 @@ async function connection(socket, io) {
       roomJson.playerOfTheTurn
     );
     return "";
-  }
+  } */
 
   if (roomJson.players.includes(socket.id)) {
     console.log("welcome back!");
     return "";
   }
 
-  if (roomJson.players.length > 1) {
+  if (roomJson.players.length >= 2) {
     console.log("full room. you was desconnected");
     //console.log(`${roomJson.players} ${ socket.id}`);
     socket.disconnect();
@@ -134,27 +135,17 @@ async function ticTacToeSocketHandler(socket, io) {
     socket.emit("am-I-first-to-play", roomJson.players[0]);
   });
 
-  socket.on("newRoom", (newRoomJson, callback) => {
-    //console.log(newRoomJson);
-    const roomArray = Array.from(io.sockets.adapter.rooms.keys());
-    const valueArray = Array.from(io.sockets.adapter.rooms.values());
-
-    //console.log(roomArray);
-    //console.log(valueArray);
-    if (roomArray.includes(newRoomJson.roomCode)) {
-      callback({
-        status: "Room code already in use",
-      });
-    } else {
-      socket.join(newRoomJson.roomCode);
-      //console.log(io.sockets.adapter.rooms.keys());
-      callback({
-        status: "created",
-      });
-    }
-
-    console.log(io.sockets.adapter.rooms);
+  socket.on("room-state", () => {
+    const room = socket.handshake.query.room;
+    const roomJson = getJsonFromJsonStringFromRedis(room);
+    callback({
+      cellsRows: roomJson.cellsRows,
+      newPlayerOfTheTurn: roomJson.newPlayerOfTheTurn
+    });
   });
 }
 
-exports.ticTacToeSocketHandler = ticTacToeSocketHandler;
+module.exports = {
+                  ticTacToeSocketHandler: ticTacToeSocketHandler,
+                  createNewTictactoeRoom: createNewTictactoeRoom
+};

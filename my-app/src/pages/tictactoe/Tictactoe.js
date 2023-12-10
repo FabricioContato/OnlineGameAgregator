@@ -5,6 +5,17 @@ import TicTactoeGridOfCells from "./components/Tictacttoegrid";
 import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
 
+
+export async function loader({ params }){
+  const socket = io(URL, { query: { room: params.code } })
+  try {
+    const response = await socket.timeout(5000).emitWithAck('room-state');
+    return {...response, socket: socket};
+  } catch (e) {
+    console.log("the server did not acknowledge the event in the given delay")
+  }
+}
+
 const mockPlayers = [
   { userName: "...", active: false, addClass: "col-6" },
   { userName: "...", active: false, addClass: "col-6" },
@@ -28,9 +39,13 @@ const startCellsRowsList = [
   ],
 ];
 
+/* export function loader(){
+
+} */
+
 function TicTacToe() {
   const  par = useParams();
-  const [myTurn, setMyTurn] = React.useState(false);
+  //const [myTurn, setMyTurn] = React.useState(false);
   const [cellsRows, setCellsRows] = React.useState(startCellsRowsList);
   const socket = React.useMemo(
     () => io(URL, { autoConnect: false, query: { room: par.code } }),

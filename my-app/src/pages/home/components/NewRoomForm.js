@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { cardList } from "./cardList";
 import { socket } from "./socketHandler";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const radioButtonsList = [
   {
@@ -102,6 +102,7 @@ function NewRoomForm() {
     roomPrivace: "Public",
     roomType: "",
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     socket.connect();
@@ -148,10 +149,17 @@ function NewRoomForm() {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const url = "localhost:5000/newRomm";
-    fetch();
+    const mesageStatus = await fetch(url).then(response => response.status);
+    
+    if(mesageStatus == 200){
+      navigate(`/test/${formData.roomCode}`);
+    }else{
+      console.log(`message status: ${formData.roomCode} \n Room was not created.`)
+    }
+
     /* socket.timeout(3000).emit("newRoom", formData, (err, response) => {
       if(err){
         console.log("server did not acknowledge the event in the given delay");
@@ -201,12 +209,11 @@ function NewRoomForm() {
               />
             </div>
             <div className="col-sm-2 m-sm-0 col-4 m-1">
-              <Link
-                to={`test/${formData.roomCode}`}
-                className="btn btn-primary form-control"
-              >
-                Start
-              </Link>
+              <input 
+                className="btn btn-primary" 
+                type="submit" 
+                value="Start"
+              />
             </div>
           </form>
         </div>

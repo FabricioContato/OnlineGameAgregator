@@ -4,6 +4,9 @@ const PORT = 5000;
 const cors = require("cors");
 app.use(cors());
 
+const {client, jsonStringIntoRedis, getJsonFromJsonStringFromRedis} = require("./redis");
+
+
 const { createServer } = require("node:http");
 const { Server } = require("socket.io");
 const { Socket } = require("node:dgram");
@@ -13,7 +16,10 @@ const io = new Server(server, {
     origin: ["http://localhost:3000", "http://localhost:2000"],
   },
 });
-const {ticTacToeSocketHandler} = require("./tictactoesockethandler");
+const {ticTacToeSocketHandler, createNewTictactoeRoom} = require("./tictactoesockethandler");
+
+const CONFLICT_STATUS = 409;
+const OK_STATUS = 200;
 
 app.get("/", (req, res) => {
   console.log("get/ ok");
@@ -21,7 +27,17 @@ app.get("/", (req, res) => {
 });
 
 app.post("/newRoom", async (req, res) => {
-  res.json({ anwser:"hello world!"});
+  const body = req.body;
+  const roomCode = body.roomCode;
+  const anwser = getJsonFromJsonStringFromRedis(roomCode);
+
+  if(anwser){
+    res.sendStatus(CONFLICT_STATUS).end();
+  }
+
+  createNewTictactoeRoom(roomCode);
+  
+  res.sendStatus(OK_STATUS).end();
 })
 
 io.on("connection", async (socket) => {
