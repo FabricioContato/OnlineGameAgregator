@@ -152,10 +152,11 @@ function NewRoomForm() {
   async function handleSubmit(event) {
     event.preventDefault();
     const url = "http://127.0.0.1:5000/newRoom";
-    const data = {roomCode: formData.roomCode};
-    const postJson = { method: "POST", headers: {"Content-Type": "application/json",}, body: JSON.stringify(data)}
+    const urlObj = new URLSearchParams();
+    urlObj.append("roomCode", formData.roomCode)
+    const postJson = { method: "POST",  body: urlObj}
     const mesageStatus = await fetch(url, postJson).then(response => response.status);
-    
+
     if(mesageStatus === 200){
       navigate(`/test/${formData.roomCode}`);
     }else{

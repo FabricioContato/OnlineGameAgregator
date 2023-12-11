@@ -9,7 +9,9 @@ const URL = "http://localhost:5000";
 export async function loader({ params }){
   const socket = io(URL, { query: { room: params.code, rootype: 'tic-tac-toe' } })
   try {
-    const response = await socket.timeout(5000).emitWithAck('room-state');
+    const response = await socket.timeout(50000).emitWithAck('room-state');
+    console.log(response.cellsRows);
+    console.log("loader function got response");
     return {...response, socket: socket};
   } catch (e) {
     console.log("the server did not acknowledge the event in the given delay")

@@ -31,16 +31,17 @@ app.get("/", (req, res) => {
 app.post("/newRoom", async (req, res) => {
   console.log("new room route");
   const body = req.body;
-  console.log(body);
+  console.log(`new room route; req.body: ${JSON.stringify(body)}`);
   const roomCode = body.roomCode;
-  const anwser = getJsonFromJsonStringFromRedis(roomCode);
+  const anwser = await getJsonFromJsonStringFromRedis(roomCode);
+  console.log(`mew room route; anwser to key ${roomCode}:  ${anwser}`);
 
   if(anwser){
     console.log("new room route failed");
     res.sendStatus(CONFLICT_STATUS).end();
 
   }else{
-    createNewTictactoeRoom(roomCode);
+    await createNewTictactoeRoom(roomCode);
     res.sendStatus(OK_STATUS).end();
   
   }

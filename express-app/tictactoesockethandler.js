@@ -1,3 +1,4 @@
+const { json } = require("body-parser");
 const {client, jsonStringIntoRedis, getJsonFromJsonStringFromRedis} = require("./redis");
 
 const startCellsRowsList = [
@@ -19,10 +20,9 @@ const startCellsRowsList = [
 ];
 
 async function createNewTictactoeRoom(roomCode){
-  const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
     roomJson = {
       roomType: "tic-tac-toe",
-      cellsRows: startCellsRowsListStr,
+      cellsRows: startCellsRowsList,
       playerOfTheTurn: null,
       players: [],
     };
@@ -37,6 +37,7 @@ async function connection(socket, io) {
   socket.join(room);
 
   let roomJson = await getJsonFromJsonStringFromRedis(room);
+  console.log(`tic-tac-toe connection event; redis anwser from key ${room}: ${JSON.stringify(roomJson)}` )
   /* if (!roomJson) {
     const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
     roomJson = {
@@ -136,13 +137,15 @@ async function ticTacToeSocketHandler(socket, io) {
     socket.emit("am-I-first-to-play", roomJson.players[0]);
   });
 
-  socket.on("room-state", () => {
+  socket.on("room-state", async (callback) => {
     const room = socket.handshake.query.room;
-    const roomJson = getJsonFromJsonStringFromRedis(room);
-    callback({
+    const roomJson = await getJsonFromJsonStringFromRedis(room);
+    console.log(`tic-tac-toe room-state event; redis anwser from key ${room}: ${JSON.stringify(roomJson)}` )
+    callback(roomJson);
+    /* callback({
       cellsRows: roomJson.cellsRows,
       newPlayerOfTheTurn: roomJson.newPlayerOfTheTurn
-    });
+    }); */
   });
 }
 
