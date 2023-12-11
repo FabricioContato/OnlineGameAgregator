@@ -15,7 +15,7 @@ services:
       start_period: 10s
       
   express:
-    image: node:alpine
+    image: node:alpine-nodemon
 
     volumes:
       - ./express-app/:/code
@@ -38,7 +38,7 @@ services:
     ports:
       - "5000:5000"
 
-    command: node index.js
+    command: nodemon index.js
 
   react:
     image: node:alpine

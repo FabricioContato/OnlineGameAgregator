@@ -14,7 +14,7 @@ export async function loader({ params }){
     console.log("loader function got response");
     return {...response, socket: socket};
   } catch (e) {
-    console.log("the server did not acknowledge the event in the given delay")
+    console.log("the server did not acknowledge the event in the given delay");
   }
 }
 
