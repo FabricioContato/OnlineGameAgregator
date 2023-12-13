@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 function Nav() {
     return (
@@ -7,7 +8,9 @@ function Nav() {
         style={{ backgroundColor: "#7855c7", color: "white" }}
       >
         <div className="container-fluid">
-          <div className="navbar-brand"> JKLM.fun </div>
+          <Link to="http://localhost:3000/" style={{textDecoration: "none"}}>
+            <div className="navbar-brand"> JKLM.fun </div>
+          </Link>
           <form action="" className="d-flex">
             <span className="d-flex btn btn-primary">
               <img

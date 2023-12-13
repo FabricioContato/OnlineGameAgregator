@@ -1,5 +1,12 @@
 import React from "react";
-import { Form } from "react-router-dom";
+import { Form, redirect } from "react-router-dom";
+
+export async function action({request, params}){
+  const formData = await request.formData();
+  const nickName = formData.get("nickname");
+  const code = params.code;
+  return redirect(`/test/${code}/${nickName}`);
+}
 
 export default function Nickform() {
   return (
@@ -12,11 +19,12 @@ export default function Nickform() {
         className="container-fluid p-2"
         style={{ borderStyle: "dashed", borderColor: "#aaaaaa" }}
       >
-        <Form className="row">
+        <Form method="post" className="row">
           <div className="col-9">
             <input
               className="form-control"
               type="text"
+              name="nickname"
               placeholder="Nick-name"
             />
           </div>
