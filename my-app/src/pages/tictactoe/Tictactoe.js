@@ -7,13 +7,11 @@ const URL = "http://localhost:5000";
 
 export async function loader({ params }){
   const url = `http://127.0.0.1:5000/room/${params.code}`;
-  //const urlObj = new URLSearchParams();
-  //urlObj.append("roomCode", params.code);
-  //const postJson = { method: "GET",  body: urlObj};
+  
   const response = await fetch(url);
 
   if(response.status !== 200){
-    throw {erroMessage: "Room not found"}
+    throw {erroMessage: `Room "${params.code}" not found`}
   }
 
   const socket = io(URL, { autoConnect: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
