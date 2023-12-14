@@ -48,9 +48,8 @@ app.post("/newRoom", async (req, res) => {
   }
 });
 
-app.get("/room", async (req, res) => {
-  const body = req.body;
-  const roomCode = body.roomCode;
+app.get("/room/:code", async (req, res) => {
+  const roomCode = req.params.code;
   const anwser = await getJsonFromJsonStringFromRedis(roomCode);
 
   if(!anwser){

@@ -6,19 +6,20 @@ import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
 
 export async function loader({ params }){
-  const url = "http://127.0.0.1:5000/room";
-  const urlObj = new URLSearchParams();
-  url.urlObj.append("roomCode", params.code);
-  const postJson = { method: "GET",  body: urlObj};
-  const response = await fetch(url, postJson);
+  const url = `http://127.0.0.1:5000/room/${params.code}`;
+  //const urlObj = new URLSearchParams();
+  //urlObj.append("roomCode", params.code);
+  //const postJson = { method: "GET",  body: urlObj};
+  const response = await fetch(url);
 
   if(response.status !== 200){
     throw {erroMessage: "Room not found"}
   }
 
-  const socket = io(URL, { query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
-
-  return {...response.json(), socket: socket};
+  const socket = io(URL, { autoConnect: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
+  const resJson = await response.json()
+  console.log(resJson);
+  return {...resJson, socket: socket};
 }
 
 const inactivePlayers = [
@@ -56,7 +57,6 @@ function TicTacToe() {
   }
 
   React.useEffect(() => {
-    socket.connect();
 
     function cellClickHandler(cellsRows, playerOfTheTurn) {
       setCellsRows(cellsRows);
@@ -80,6 +80,8 @@ function TicTacToe() {
       setPlayers(newPlayers) */;
     }
     socket.on("player-joins", playerJoinsHandler);
+
+    socket.connect();
 
     return () => {
       socket.off("player-click", cellClickHandler);

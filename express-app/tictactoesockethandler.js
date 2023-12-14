@@ -34,6 +34,7 @@ async function createNewTictactoeRoom(roomCode){
 async function connection(socket, io) {
   console.log("connected");
   const room = socket.handshake.query.room;
+  const userName = socket.handshake.query.userName;
   socket.join(room);
 
   let roomJson = await getJsonFromJsonStringFromRedis(room);
@@ -54,7 +55,7 @@ async function connection(socket, io) {
     return "";
   } */
 
-  if (roomJson.players.includes(socket.id)) {
+  if (roomJson.players.includes(userName)) {
     console.log("welcome back!");
     return "";
   }
@@ -66,7 +67,11 @@ async function connection(socket, io) {
     return "";
   }
 
-  roomJson.players.push(socket.id);
+  roomJson.players.push(userName);
+
+  if(! roomJson.playerOfTheTurn){
+    roomJson.playerOfTheTurn = userName;
+  }
   await jsonStringIntoRedis(room, roomJson);
   io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
 }
@@ -86,11 +91,12 @@ async function ticTacToeSocketHandler(socket, io) {
 
   socket.on("player-click", async (cellId) => {
     const room = socket.handshake.query.room;
+    const userName = socket.handshake.query.userName;
 
     const roomJson = await getJsonFromJsonStringFromRedis(room);
     const playerOfTheTurn = roomJson.playerOfTheTurn;
     //console.log(`requesting player: ${socket.id} ; player of the turn ${playerOfTheTurn}`);
-    if (playerOfTheTurn !== socket.id) {
+    if (playerOfTheTurn !== userName) {
       console.log("not your turn");
       return "none";
     }
@@ -105,30 +111,31 @@ async function ticTacToeSocketHandler(socket, io) {
 
     const rowIndex = Math.floor(cellId / 3);
     const cellIndex = cellId - rowIndex * 3;
-    const cellsRowsStr = roomJson.cellsRows;
     //console.log(cellsRowsStr);
-    const cellsRows = JSON.parse(cellsRowsStr);
+    const cellsRows = roomJson.cellsRows;
     const currentCellCode = cellsRows[rowIndex][cellIndex].imageSimbleCode;
     if (["x", "circle"].includes(currentCellCode)) {
       console.log(`you can't click at cell: ${cellId}`);
       return "none";
     }
 
-    const callback = (id) => id === socket.id;
-    const playerNumber = membersArray.findIndex(callback) + 1;
+    const playersUserNames = roomJson.players;
+
+    const callback = (userName_) => userName_ === userName;
+    const playerNumber = playersUserNames.findIndex(callback) + 1;
     const newImageSimbleCode = playerNumber === 1 ? "x" : "circle";
 
     cellsRows[rowIndex][cellIndex].imageSimbleCode = newImageSimbleCode;
-    const newCellsRoowsStr = JSON.stringify(cellsRows);
-    roomJson.cellsRows = newCellsRoowsStr;
+    const newCellsRoows = cellsRows;
+    roomJson.cellsRows = newCellsRoows;
 
-    const callback_ = (id) => id !== socket.id;
-    const newPlayerOfTheTurn = membersArray.find(callback_);
+    const callback_ = (userName_) => userName_ !== userName;
+    const newPlayerOfTheTurn = playersUserNames.find(callback_);
     roomJson.playerOfTheTurn = newPlayerOfTheTurn;
 
     await jsonStringIntoRedis(room, roomJson);
 
-    io.to(room).emit("player-click", cellsRows, newPlayerOfTheTurn);
+    io.to(room).emit("player-click", newCellsRoows, newPlayerOfTheTurn);
   });
 
   socket.on("am-I-first-to-play", async () => {
