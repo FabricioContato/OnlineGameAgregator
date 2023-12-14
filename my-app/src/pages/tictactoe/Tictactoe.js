@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, useLoaderData } from "react-router-dom";
 import Players from "./components/Players";
 import TicTactoeGridOfCells from "./components/Tictacttoegrid";
+import StartButton from "./components/StartButton";
 import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
 
@@ -14,7 +15,7 @@ export async function loader({ params }){
     throw {erroMessage: `Room "${params.code}" not found`}
   }
 
-  const socket = io(URL, { autoConnect: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
+  const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
   const resJson = await response.json()
   console.log(resJson);
   return {...resJson, socket: socket};
@@ -32,6 +33,7 @@ const inactivePlayers = [
 function TicTacToe() {
   const data = useLoaderData();
   const socket = data.socket;
+  const [gameState, setGameState] = React.useState(data.state);
   const [cellsRows, setCellsRows] = React.useState(data.cellsRows);
   const [players, setPlayers] = React.useState(playersJoinsOrLeave(data.players, data.playerOfTheTurn));
 
@@ -79,17 +81,33 @@ function TicTacToe() {
     }
     socket.on("player-joins", playerJoinsHandler);
 
+    function startGameHandler(state){
+      setGameState(state);
+    }
+    socket.on("start-game", startGameHandler);
+
+    function diconnectHandler(){
+      throw {erroMessage: "You was disconnected. somethin went wrong!"}
+    }
+    socket.on("disconnect", diconnectHandler);
+
     socket.connect();
 
     return () => {
       socket.off("player-click", cellClickHandler);
       socket.off("player-joins", playerJoinsHandler);
+      socket.off("start-game", startGameHandler);
+      socket.off("disconnect", diconnectHandler);
       socket.disconnect();
     };
   }, [0]);
 
-  function handleClick(id) {
+  function cellHandleClick(id) {
     socket.emit("player-click", id);
+  }
+
+  function startButtonHandleClick(){
+    socket.emit("start-game");
   }
 
   return (
@@ -98,7 +116,9 @@ function TicTacToe() {
         <Players players={players} />
       </React.StrictMode>
       <React.StrictMode>
-        <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={handleClick} />
+        { gameState === 'started' ? 
+          <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} /> 
+          : <StartButton disabled={false} onClickHandler={startButtonHandleClick} />}
       </React.StrictMode>
     </>
   );

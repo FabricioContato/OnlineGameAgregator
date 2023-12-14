@@ -25,6 +25,7 @@ async function createNewTictactoeRoom(roomCode){
       cellsRows: startCellsRowsList,
       playerOfTheTurn: null,
       players: [],
+      state: "pre-start"
     };
     await jsonStringIntoRedis(roomCode, roomJson);
 
@@ -32,12 +33,16 @@ async function createNewTictactoeRoom(roomCode){
 
 
 async function connection(socket, io) {
-  console.log("connected");
   const room = socket.handshake.query.room;
   const userName = socket.handshake.query.userName;
   socket.join(room);
 
   let roomJson = await getJsonFromJsonStringFromRedis(room);
+  if(!roomJson){
+    socket.disconnect();
+    return false;
+  }
+
   console.log(`tic-tac-toe connection event; redis anwser from key ${room}: ${JSON.stringify(roomJson)}` )
   /* if (!roomJson) {
     const startCellsRowsListStr = JSON.stringify(startCellsRowsList);
@@ -56,15 +61,16 @@ async function connection(socket, io) {
   } */
 
   if (roomJson.players.includes(userName)) {
+    console.log("connected");
     console.log("welcome back!");
-    return "";
+    return true;
   }
 
   if (roomJson.players.length >= 2) {
     console.log("full room. you was desconnected");
     //console.log(`${roomJson.players} ${ socket.id}`);
     socket.disconnect();
-    return "";
+    return false;
   }
 
   roomJson.players.push(userName);
@@ -74,10 +80,16 @@ async function connection(socket, io) {
   }
   await jsonStringIntoRedis(room, roomJson);
   io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
+  console.log("connected");
+  return true;
 }
 
 async function ticTacToeSocketHandler(socket, io) {
-  await connection(socket, io);
+  const connectionStatus = await connection(socket, io);
+
+  if(! connectionStatus){
+    return null;
+  }
 
   socket.on("disconnect", async () => {
     console.log("diconnected");
@@ -144,15 +156,16 @@ async function ticTacToeSocketHandler(socket, io) {
     socket.emit("am-I-first-to-play", roomJson.players[0]);
   });
 
-  socket.on("room-state", async (callback) => {
+  socket.on("start-game", async () => {
     const room = socket.handshake.query.room;
     const roomJson = await getJsonFromJsonStringFromRedis(room);
-    console.log(`tic-tac-toe room-state event; redis anwser from key ${room}: ${JSON.stringify(roomJson)}` )
-    callback(roomJson);
-    /* callback({
-      cellsRows: roomJson.cellsRows,
-      newPlayerOfTheTurn: roomJson.newPlayerOfTheTurn
-    }); */
+    //console.log(`tic-tac-toe start-game event; redis anwser from key ${room}: ${JSON.stringify(roomJson)}` )
+    roomJson.state = "started";
+    await jsonStringIntoRedis(room, roomJson);
+
+    socket.emit("start-game", roomJson.state);
+    
+    
   });
 }
 
