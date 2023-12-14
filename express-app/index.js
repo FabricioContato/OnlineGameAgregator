@@ -22,6 +22,7 @@ const {ticTacToeSocketHandler, createNewTictactoeRoom} = require("./tictactoesoc
 
 const CONFLICT_STATUS = 409;
 const OK_STATUS = 200;
+const NOT_FOUND_STATUS = 404;
 
 app.get("/", (req, res) => {
   console.log("get/ ok");
@@ -45,7 +46,22 @@ app.post("/newRoom", async (req, res) => {
     res.sendStatus(OK_STATUS).end();
   
   }
-})
+});
+
+app.get("/room", async (req, res) => {
+  const body = req.body;
+  const roomCode = body.roomCode;
+  const anwser = await getJsonFromJsonStringFromRedis(roomCode);
+
+  if(!anwser){
+    res.sendStatus(NOT_FOUND_STATUS).end();
+  
+  }else{
+    res.json(anwser);
+  
+  }
+
+});
 
 io.on("connection", async (socket) => {
   //const anwser = await client.get("test_key");

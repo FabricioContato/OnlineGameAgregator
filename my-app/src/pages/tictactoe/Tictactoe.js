@@ -5,17 +5,20 @@ import TicTactoeGridOfCells from "./components/Tictacttoegrid";
 import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
 
-
 export async function loader({ params }){
-  const socket = io(URL, { query: { room: params.code, rootype: 'tic-tac-toe' } })
-  try {
-    const response = await socket.timeout(50000).emitWithAck('room-state');
-    console.log(response.cellsRows);
-    console.log("loader function got response");
-    return {...response, socket: socket};
-  } catch (e) {
-    console.log("the server did not acknowledge the event in the given delay");
+  const url = "http://127.0.0.1:5000/room";
+  const urlObj = new URLSearchParams();
+  url.urlObj.append("roomCode", params.code);
+  const postJson = { method: "GET",  body: urlObj};
+  const response = await fetch(url, postJson);
+
+  if(response.status !== 200){
+    throw {erroMessage: "Room not found"}
   }
+
+  const socket = io(URL, { query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
+
+  return {...response.json(), socket: socket};
 }
 
 const inactivePlayers = [
@@ -31,27 +34,39 @@ function TicTacToe() {
   const data = useLoaderData();
   const socket = data.socket;
   const [cellsRows, setCellsRows] = React.useState(data.cellsRows);
-  const [players, setPlayers] = React.useState(newPlayers(data.playerOfTheTurnId));
+  const [players, setPlayers] = React.useState(playersJoinsOrLeave(data.players, data.playerOfTheTurn));
 
-  function newPlayers(playerOfTheTurnId){
+  function playersJoinsOrLeave(userNameArry, playerOfTheTurn){
     const newPlayers = JSON.parse(JSON.stringify(inactivePlayers));
+    for(let i=0; i < userNameArry.length; i++){
+      newPlayers[i].userName = userNameArry[i];
+      newPlayers[i].active = newPlayers[i].userName === playerOfTheTurn;
+    }
+
+    return newPlayers;
+  }
+
+  function setPlayers_(playerOfTheTurn){
+    setPlayers((prePlayers) => {
+      const newPlayers = JSON.parse(JSON.stringify(prePlayers));
         for (let i = 0; i < newPlayers.length; i++) {
-          newPlayers[i].active = newPlayers[i].userName === playerOfTheTurnId;
+          newPlayers[i].active = newPlayers[i].userName === playerOfTheTurn;
         }
-        return newPlayers;
+        return newPlayers;})
   }
 
   React.useEffect(() => {
     socket.connect();
 
-    function cellClickHandler(cellsRows, playerOfTheTurnId) {
+    function cellClickHandler(cellsRows, playerOfTheTurn) {
       setCellsRows(cellsRows);
-      setPlayers(newPlayers(playerOfTheTurnId));
+      setPlayers_(playerOfTheTurn);
     }
     socket.on("player-click", cellClickHandler);
 
-    function playerJoinsHandler(userNames, playerOfTheTurnId) {
-      if (userNames.length < 2) {
+    function playerJoinsHandler(userNames, playerOfTheTurn) {
+      setPlayers(playersJoinsOrLeave(userNames, playerOfTheTurn));
+      /* if (userNames.length < 2) {
         userNames.push("...");
       }
 
@@ -62,7 +77,7 @@ function TicTacToe() {
       newPlayers[0].active = newPlayers[0].userName === playerOfTheTurnId;
       newPlayers[1].active = newPlayers[1].userName === playerOfTheTurnId;
 
-      setPlayers(newPlayers);
+      setPlayers(newPlayers) */;
     }
     socket.on("player-joins", playerJoinsHandler);
 
