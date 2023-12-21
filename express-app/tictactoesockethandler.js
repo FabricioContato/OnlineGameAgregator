@@ -25,6 +25,7 @@ async function createNewTictactoeRoom(roomCode){
       cellsRows: startCellsRowsList,
       playerOfTheTurn: null,
       players: [],
+      playersReady: [],
       state: "pre-start"
     };
     await jsonStringIntoRedis(roomCode, roomJson);
@@ -84,6 +85,45 @@ async function connection(socket, io) {
   return true;
 }
 
+
+async function userNameBySimble(simble, playersUserNames){
+  return simble === 'x' ? playersUserNames[0] : playersUserNames[1]; 
+}
+
+async function winCondition(cellsRows, playersUserNames){
+
+  //possible win combinations
+  const auxArr = [
+    [cellsRows[0][0].imageSimbleCode, cellsRows[0][1].imageSimbleCode, cellsRows[0][2].imageSimbleCode], //horizontal win combinations
+    [cellsRows[1][0].imageSimbleCode, cellsRows[1][1].imageSimbleCode, cellsRows[1][2].imageSimbleCode],
+    [cellsRows[2][0].imageSimbleCode, cellsRows[2][1].imageSimbleCode, cellsRows[2][2].imageSimbleCode],
+    [cellsRows[0][0].imageSimbleCode, cellsRows[1][0].imageSimbleCode, cellsRows[2][0].imageSimbleCode], //vertical win combinations
+    [cellsRows[0][1].imageSimbleCode, cellsRows[1][1].imageSimbleCode, cellsRows[2][1].imageSimbleCode],
+    [cellsRows[0][2].imageSimbleCode, cellsRows[1][2].imageSimbleCode, cellsRows[2][2].imageSimbleCode],
+    [cellsRows[0][0].imageSimbleCode, cellsRows[1][1].imageSimbleCode, cellsRows[2][2].imageSimbleCode], //diagonal win combinations
+    [cellsRows[0][2].imageSimbleCode, cellsRows[1][1].imageSimbleCode, cellsRows[2][0].imageSimbleCode]
+  ]
+
+  for(let arr of auxArr){
+    console.log(arr);
+    if(arr.includes("blank")){
+      continue;
+    }
+
+    if(arr.includes("circle") && !arr.includes("x")){
+      return await userNameBySimble("circle", playersUserNames);
+    }
+
+    if(arr.includes("x") && !arr.includes("circle")){
+      return await userNameBySimble("x", playersUserNames);
+    }
+  }
+
+  //no winner yet!
+  return false;
+
+}
+
 async function ticTacToeSocketHandler(socket, io) {
   const connectionStatus = await connection(socket, io);
 
@@ -141,13 +181,24 @@ async function ticTacToeSocketHandler(socket, io) {
     const newCellsRoows = cellsRows;
     roomJson.cellsRows = newCellsRoows;
 
+    const winnerPlayer = await winCondition(newCellsRoows, playersUserNames);
+    console.log(winnerPlayer);
+
     const callback_ = (userName_) => userName_ !== userName;
     const newPlayerOfTheTurn = playersUserNames.find(callback_);
     roomJson.playerOfTheTurn = newPlayerOfTheTurn;
 
-    await jsonStringIntoRedis(room, roomJson);
-
-    io.to(room).emit("player-click", newCellsRoows, newPlayerOfTheTurn);
+    
+    //state: "pre-start"
+    if(winnerPlayer){
+      console.log(`palyer winns: ${winnerPlayer}`);
+      //roomJson.state = "pre-start";
+      await jsonStringIntoRedis(room, roomJson);
+      io.to(room).emit("winner-player", newCellsRoows, winnerPlayer);
+    }else{
+      await jsonStringIntoRedis(room, roomJson);
+      io.to(room).emit("player-click", newCellsRoows, newPlayerOfTheTurn);
+    }
   });
 
   socket.on("am-I-first-to-play", async () => {
@@ -155,6 +206,29 @@ async function ticTacToeSocketHandler(socket, io) {
     const roomJson = await getJsonFromJsonStringFromRedis(room);
     socket.emit("am-I-first-to-play", roomJson.players[0]);
   });
+
+  socket.on("ready", async () => {
+    const room = socket.handshake.query.room;
+    const userName = socket.handshake.query.userName;
+
+    const roomJson = await getJsonFromJsonStringFromRedis(room);
+    if(roomJson.playersReady.includes(userName)){
+      socket.emit("ready", roomJson.playersReady);
+      return null;
+    }
+
+    roomJson.playersReady.push(userName);
+    await jsonStringIntoRedis(room, roomJson);
+    io.to(room).emit("ready", roomJson.playersReady);
+
+    if(roomJson.playersReady.length === 2){
+      roomJson.state = "started";
+      io.to(room).emit("start-game", roomJson.state);
+    }
+
+    
+
+  })
 
   socket.on("start-game", async () => {
     const room = socket.handshake.query.room;

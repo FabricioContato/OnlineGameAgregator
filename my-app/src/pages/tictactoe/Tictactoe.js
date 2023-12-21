@@ -2,7 +2,8 @@ import React from "react";
 import { useParams, useLoaderData } from "react-router-dom";
 import Players from "./components/Players";
 import TicTactoeGridOfCells from "./components/Tictacttoegrid";
-import StartButton from "./components/StartButton";
+import ReadyButton from "./components/ReadyButton";
+import WinnerMessage from "./components/WinnerMessage";
 import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
 
@@ -17,8 +18,9 @@ export async function loader({ params }){
 
   const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
   const resJson = await response.json()
-  console.log(resJson);
-  return {...resJson, socket: socket};
+    
+
+  return {...resJson, socket: socket, userName: params.username};
 }
 
 const inactivePlayers = [
@@ -33,9 +35,12 @@ const inactivePlayers = [
 function TicTacToe() {
   const data = useLoaderData();
   const socket = data.socket;
+  const userName = data.userName;
+  const [playersReady, setPlayersReady] = React.useState(data.playersReady);
   const [gameState, setGameState] = React.useState(data.state);
   const [cellsRows, setCellsRows] = React.useState(data.cellsRows);
   const [players, setPlayers] = React.useState(playersJoinsOrLeave(data.players, data.playerOfTheTurn));
+  const [winner, setWinner] = React.useState(false);
 
   function playersJoinsOrLeave(userNameArry, playerOfTheTurn){
     const newPlayers = JSON.parse(JSON.stringify(inactivePlayers));
@@ -86,10 +91,21 @@ function TicTacToe() {
     }
     socket.on("start-game", startGameHandler);
 
+    function ready(playersReady_){
+      setPlayersReady(playersReady_);  
+    }
+    socket.on("ready", ready);
+
     function diconnectHandler(){
       throw {erroMessage: "You was disconnected. somethin went wrong!"}
     }
     socket.on("disconnect", diconnectHandler);
+
+    function winnerPlayer(cellsRows, winnerPlayer){
+      setCellsRows(cellsRows);
+      setWinner(winnerPlayer);
+    }
+    socket.on("winner-player", winnerPlayer);
 
     socket.connect();
 
@@ -97,7 +113,9 @@ function TicTacToe() {
       socket.off("player-click", cellClickHandler);
       socket.off("player-joins", playerJoinsHandler);
       socket.off("start-game", startGameHandler);
+      socket.off("ready", ready);
       socket.off("disconnect", diconnectHandler);
+      socket.off("winner-player", winnerPlayer);
       socket.disconnect();
     };
   }, [0]);
@@ -106,19 +124,24 @@ function TicTacToe() {
     socket.emit("player-click", id);
   }
 
-  function startButtonHandleClick(){
-    socket.emit("start-game");
+  function readyButtonHandleClick(){
+    socket.emit("ready");
   }
+
+  const readyButtonDiv =  <div className="d-flex justify-content-center"> 
+                            <ReadyButton disabled={false} onClickHandler={readyButtonHandleClick} />
+                          </div>;
 
   return (
     <>
       <React.StrictMode>
-        <Players players={players} />
+        <Players players={players} playersReady={playersReady} />
       </React.StrictMode>
+        {winner ? <WinnerMessage message= {winner === userName ? "You Won": "You Lost" } /> : <></>}
       <React.StrictMode>
         { gameState === 'started' ? 
           <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} /> 
-          : <StartButton disabled={false} onClickHandler={startButtonHandleClick} />}
+          : readyButtonDiv }
       </React.StrictMode>
     </>
   );
