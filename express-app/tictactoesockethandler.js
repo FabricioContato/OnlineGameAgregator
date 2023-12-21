@@ -19,10 +19,14 @@ const startCellsRowsList = [
   ],
 ];
 
+async function getNewStartCellsRowsList(){
+  return JSON.parse(JSON.stringify(startCellsRowsList));
+}
+
 async function createNewTictactoeRoom(roomCode){
     roomJson = {
       roomType: "tic-tac-toe",
-      cellsRows: startCellsRowsList,
+      cellsRows: await getNewStartCellsRowsList(),
       playerOfTheTurn: null,
       players: [],
       playersReady: [],
@@ -32,6 +36,10 @@ async function createNewTictactoeRoom(roomCode){
 
 }
 
+function getRandomPlayer(players){
+  const index = Math.floor(Math.random() * players.length);
+  return players[index];
+}
 
 async function connection(socket, io) {
   const room = socket.handshake.query.room;
@@ -143,9 +151,17 @@ async function ticTacToeSocketHandler(socket, io) {
 
   socket.on("player-click", async (cellId) => {
     const room = socket.handshake.query.room;
-    const userName = socket.handshake.query.userName;
 
     const roomJson = await getJsonFromJsonStringFromRedis(room);
+
+    if(roomJson.state !== "started"){
+      console.log("Wait for other players to get ready!");
+      return null;
+    }
+
+    const userName = socket.handshake.query.userName;
+
+    
     const playerOfTheTurn = roomJson.playerOfTheTurn;
     //console.log(`requesting player: ${socket.id} ; player of the turn ${playerOfTheTurn}`);
     if (playerOfTheTurn !== userName) {
@@ -192,9 +208,12 @@ async function ticTacToeSocketHandler(socket, io) {
     //state: "pre-start"
     if(winnerPlayer){
       console.log(`palyer winns: ${winnerPlayer}`);
-      //roomJson.state = "pre-start";
+      roomJson.state = "finished";
+      roomJson.playersReady = [];
+      roomJson.cellsRows = await getNewStartCellsRowsList();
+      roomJson.playerOfTheTurn = getRandomPlayer(roomJson.players);
       await jsonStringIntoRedis(room, roomJson);
-      io.to(room).emit("winner-player", newCellsRoows, winnerPlayer);
+      io.to(room).emit("winner-player", newCellsRoows, winnerPlayer, roomJson.state, roomJson.playersReady);
     }else{
       await jsonStringIntoRedis(room, roomJson);
       io.to(room).emit("player-click", newCellsRoows, newPlayerOfTheTurn);
@@ -218,30 +237,36 @@ async function ticTacToeSocketHandler(socket, io) {
     }
 
     roomJson.playersReady.push(userName);
-    await jsonStringIntoRedis(room, roomJson);
-    io.to(room).emit("ready", roomJson.playersReady);
+    
 
     if(roomJson.playersReady.length === 2){
       roomJson.state = "started";
-      io.to(room).emit("start-game", roomJson.state);
+      await jsonStringIntoRedis(room, roomJson);
+      io.to(room).emit("ready", roomJson.playersReady);
+      io.to(room).emit("start-game",roomJson.cellsRows, roomJson.playerOfTheTurn , roomJson.state);
+    }else{
+      await jsonStringIntoRedis(room, roomJson);
+      io.to(room).emit("ready", roomJson.playersReady);
     }
 
     
 
-  })
+    
 
-  socket.on("start-game", async () => {
+  });
+}
+  /* socket.on("start-game", async () => {
     const room = socket.handshake.query.room;
     const roomJson = await getJsonFromJsonStringFromRedis(room);
     //console.log(`tic-tac-toe start-game event; redis anwser from key ${room}: ${JSON.stringify(roomJson)}` )
     roomJson.state = "started";
     await jsonStringIntoRedis(room, roomJson);
 
-    socket.emit("start-game", roomJson.state);
+    socket.emit("start-game", roomJson.cellsRows, roomJson.state); 
     
     
   });
-}
+}*/
 
 module.exports = {
                   ticTacToeSocketHandler: ticTacToeSocketHandler,

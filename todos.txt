@@ -1,0 +1,13 @@
+(ok) join a room
+(ok) click on ready
+(ok) wait someone else click on ready
+(ok) the game starts
+(ok) a player wins
+(ok) no players can make any moves on the board
+(ok) you won message
+(  ) you can clik on ready again
+
+
+( ) when a player leaves in the middle of a mach, his user name still is on the list, so he can come back, but no one else with a different user name can join.
+
+( ) when a player leaves before a mach starts, his user name is removed from the list, so enyoneelse with a different user name can join.

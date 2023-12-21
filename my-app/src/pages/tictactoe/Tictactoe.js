@@ -86,7 +86,9 @@ function TicTacToe() {
     }
     socket.on("player-joins", playerJoinsHandler);
 
-    function startGameHandler(state){
+    function startGameHandler(cellsRows, playerOfTheTurn, state){
+      setCellsRows(cellsRows);
+      setPlayers_(playerOfTheTurn);
       setGameState(state);
     }
     socket.on("start-game", startGameHandler);
@@ -101,9 +103,11 @@ function TicTacToe() {
     }
     socket.on("disconnect", diconnectHandler);
 
-    function winnerPlayer(cellsRows, winnerPlayer){
+    function winnerPlayer(cellsRows, winnerPlayer, gameState, playersReady){
       setCellsRows(cellsRows);
       setWinner(winnerPlayer);
+      setGameState(gameState);
+      setPlayersReady(playersReady);
     }
     socket.on("winner-player", winnerPlayer);
 
@@ -132,16 +136,31 @@ function TicTacToe() {
                             <ReadyButton disabled={false} onClickHandler={readyButtonHandleClick} />
                           </div>;
 
+  function conditionalRenderingByGameState(){
+    switch(gameState){
+      case "pre-start":
+        return readyButtonDiv;
+      
+      case "started":
+        return <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} />;
+
+      case "finished":
+        return (<>
+                  <WinnerMessage message= {winner === userName ? "You Won": "You Lost" } />
+                  {readyButtonDiv}
+                  <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} />
+                </>)
+
+    }
+  }
+
   return (
     <>
       <React.StrictMode>
         <Players players={players} playersReady={playersReady} />
       </React.StrictMode>
-        {winner ? <WinnerMessage message= {winner === userName ? "You Won": "You Lost" } /> : <></>}
       <React.StrictMode>
-        { gameState === 'started' ? 
-          <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} /> 
-          : readyButtonDiv }
+        {conditionalRenderingByGameState()}
       </React.StrictMode>
     </>
   );
