@@ -11,3 +11,13 @@
 ( ) when a player leaves in the middle of a mach, his user name still is on the list, so he can come back, but no one else with a different user name can join.
 
 ( ) when a player leaves before a mach starts, his user name is removed from the list, so enyoneelse with a different user name can join.
+
+
+what is required to start a game ?
+Y players (ok)
+Y playersReady (ok)
+Y gameState (ok)
+Y gameBoard (ok)
+
+
+N winner

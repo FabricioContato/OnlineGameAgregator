@@ -44,7 +44,6 @@ function getRandomPlayer(players){
 async function connection(socket, io) {
   const room = socket.handshake.query.room;
   const userName = socket.handshake.query.userName;
-  socket.join(room);
 
   let roomJson = await getJsonFromJsonStringFromRedis(room);
   if(!roomJson){
@@ -70,6 +69,7 @@ async function connection(socket, io) {
   } */
 
   if (roomJson.players.includes(userName)) {
+    socket.join(room);
     console.log("connected");
     console.log("welcome back!");
     return true;
@@ -87,6 +87,8 @@ async function connection(socket, io) {
   if(! roomJson.playerOfTheTurn){
     roomJson.playerOfTheTurn = userName;
   }
+
+  socket.join(room);
   await jsonStringIntoRedis(room, roomJson);
   io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
   console.log("connected");
@@ -140,13 +142,42 @@ async function ticTacToeSocketHandler(socket, io) {
   }
 
   socket.on("disconnect", async () => {
+    //if the game is on, the players name still is on the players list
+    
+
+
     console.log("diconnected");
     const room = socket.handshake.query.room;
+
     const membersSet = io.sockets.adapter.rooms.get(room);
     if (!membersSet) {
       await client.del(room);
       console.log("room key deleted from redis");
+      return null;
     }
+
+    const userName = socket.handshake.query.userName;
+    const roomJson = await getJsonFromJsonStringFromRedis(room);
+
+    if(roomJson.state !== "started"){
+      let index = roomJson.players.indexOf(userName);
+      roomJson.players.splice(index,1);
+      
+      if(roomJson.playersReady.includes(userName)){
+        index = roomJson.playersReady.indexOf(userName);
+        roomJson.playersReady.splice(index,1);
+      }
+
+      if(roomJson.playerOfTheTurn === userName){
+        roomJson.playerOfTheTurn = roomJson.players[0];
+      }
+
+      await jsonStringIntoRedis(room, roomJson);
+      io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
+
+    }
+
+    
   });
 
   socket.on("player-click", async (cellId) => {
@@ -220,11 +251,11 @@ async function ticTacToeSocketHandler(socket, io) {
     }
   });
 
-  socket.on("am-I-first-to-play", async () => {
+ /*  socket.on("am-I-first-to-play", async () => {
     const room = socket.handshake.query.room;
     const roomJson = await getJsonFromJsonStringFromRedis(room);
     socket.emit("am-I-first-to-play", roomJson.players[0]);
-  });
+  }); */
 
   socket.on("ready", async () => {
     const room = socket.handshake.query.room;
