@@ -150,19 +150,15 @@ async function setPlayerSatate(arr ,userName, state){
   return arr;
 }
 
-/* async function playerIsReadyByUsername(arr, userName){
+async function isPlayerInArrByUsername(arr, userName){
   for(player of arr){
-    if(player.userName !== userName){
-      continue;
-    }
-
-    if(player.state === "READY"){
+    if(player.userName === userName){
       return true;
     }
   }
 
   return false;
-} */
+}
 
 async function connection(socket, io) {
   const room = socket.handshake.query.room;
@@ -174,8 +170,11 @@ async function connection(socket, io) {
     return false;
   }
 
-  if (roomJson.players.includes(userName)) {
+  if (await isPlayerInArrByUsername(roomJson.players, userName)) {
+    roomJson.players = await setPlayerSatate(roomJson.players, userName, "READY");
+    await jsonStringIntoRedis(room, roomJson);
     socket.join(room);
+    io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
     console.log("connected");
     console.log("welcome back!");
     return true;
@@ -232,10 +231,14 @@ async function ticTacToeSocketHandler(socket, io) {
         roomJson.playerOfTheTurn = roomJson.players[0].userName;
       }
   
-      await jsonStringIntoRedis(room, roomJson);
-      io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
-  
     }
+    else
+    {
+      roomJson.players = await setPlayerSatate(roomJson.players, userName, "AFK");
+    }
+
+    await jsonStringIntoRedis(room, roomJson);
+    io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
   
   }
   socket.on("disconnect", disconnect);
