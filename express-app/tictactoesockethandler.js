@@ -150,9 +150,19 @@ async function setPlayerSatate(arr ,userName, state){
   return arr;
 }
 
-async function isPlayerInArrByUsername(arr, userName){
+async function getPlayerByUsername(arr, userName){
   for(player of arr){
     if(player.userName === userName){
+      return player
+    }
+  }
+
+  return false;
+}
+
+async function isPlayerAFKByUsername(arr, userName){
+  for(player of arr){
+    if(player.state === "AFK" && player.userName === userName){
       return true;
     }
   }
@@ -160,42 +170,65 @@ async function isPlayerInArrByUsername(arr, userName){
   return false;
 }
 
+async function tictactoeConnectionValidator(roomCode, newUsername){
+  const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
+  if(!roomJson){
+    return {erro: true, status: 404, message: `Room ${roomCode} not found!`};
+  }
+
+  if(roomJson.players.length === 2){
+
+    if(await isPlayerAFKByUsername(roomJson.players, newUsername)){
+      return {erro: false, status: 200, message: "AFK user waiting for reconnection!"};
+    }
+
+    return {erro: true, status: 409, message: "The Room is full"};
+  }
+
+  if(await getPlayerByUsername(roomJson.players, newUsername)){
+    return {erro: true, status: 409, message: "Nickname is already in use!"}
+  }
+
+  return {erro: false, status: 200, message: ''};
+}
+
+async function addNewPlayer(roomCode, newUserName){
+  const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
+  const newPlayer = {userName: newUserName, state: "CONNECTING"};
+  roomJson.players.push(newPlayer);
+  if(roomJson.players.length === 1){
+    roomJson.playerOfTheTurn = newUserName;
+    //await jsonStringIntoRedis(roomCode, roomJson);
+  }
+  await jsonStringIntoRedis(roomCode, roomJson);
+  /* else{
+    await jsonStringIntoRedis(roomCode, roomJson);
+    io.to(roomCode).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
+  } */
+
+  return roomJson;
+
+}
+
 async function connection(socket, io) {
   const room = socket.handshake.query.room;
   const userName = socket.handshake.query.userName;
+  const roomJson = await getJsonFromJsonStringFromRedis(room, userName);
 
-  let roomJson = await getJsonFromJsonStringFromRedis(room);
   if(!roomJson){
     socket.disconnect();
-    return false;
+    return null;
   }
 
-  if (await isPlayerInArrByUsername(roomJson.players, userName)) {
+  const playerState = await getPlayerStateByUsername(roomJson.players, userName);
+
+  if(playerState === "CONNECTING"){
+    roomJson.players = await setPlayerSatate(roomJson.players, userName, "UN-READY");
+  } else if(playerState === "AFK"){
     roomJson.players = await setPlayerSatate(roomJson.players, userName, "READY");
-    await jsonStringIntoRedis(room, roomJson);
-    socket.join(room);
-    io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
-    console.log("connected");
-    console.log("welcome back!");
-    return true;
   }
-
-  if (roomJson.players.length >= 2) {
-    console.log("full room. you was desconnected");
-    //console.log(`${roomJson.players} ${ socket.id}`);
-    socket.disconnect();
-    return false;
-  }
-
-  const player = {userName: userName, state: "UN-PREPARE"}
-  roomJson.players.push(player);
-
-  if(! roomJson.playerOfTheTurn){
-    roomJson.playerOfTheTurn = userName;
-  }
-
-  socket.join(room);
   await jsonStringIntoRedis(room, roomJson);
+  socket.join(room);
   io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
   console.log("connected");
   return true;
@@ -335,9 +368,9 @@ async function ticTacToeSocketHandler(socket, io) {
   socket.on("ready", ready);
 }
 
-// exports
-
 module.exports = {
                   ticTacToeSocketHandler: ticTacToeSocketHandler,
-                  createNewTictactoeRoom: createNewTictactoeRoom
+                  createNewTictactoeRoom: createNewTictactoeRoom,
+                  tictactoeConnectionValidator: tictactoeConnectionValidator,
+                  addNewPlayer: addNewPlayer
 };

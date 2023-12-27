@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useLoaderData } from "react-router-dom";
+import { useParams, useLoaderData, redirect } from "react-router-dom";
 import Players from "./components/Players";
 import TicTactoeGridOfCells from "./components/Tictacttoegrid";
 import ReadyButton from "./components/ReadyButton";
@@ -8,19 +8,27 @@ import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
 
 export async function loader({ params }){
-  const url = `http://127.0.0.1:5000/room/${params.code}`;
+  const roomCode = params.code;
+  const userName = params.username;
+  const url = `http://127.0.0.1:5000/add-player/${roomCode}/${userName}`;
   
   const response = await fetch(url);
+  const resJson = await response.json();
 
-  if(response.status !== 200){
-    throw {erroMessage: `Room "${params.code}" not found`}
+  if(resJson.message === "Nickname is already in use!"){
+    console.log("Nickname is already in use! erro");
+    return redirect(`/nick/${roomCode}/409`);
   }
 
-  const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
-  const resJson = await response.json()
-    
+  if(resJson.message === "The Room is full" || response.status === 404){
+    console.log(resJson.message);
+    throw {erroMessage: resJson.message};
+  }
 
-  return {...resJson, socket: socket, userName: params.username};
+  console.log("load function was successful!");
+  const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
+  return {...resJson, socket: socket, userName: userName};
+  
 }
 
 /* export function loader(){

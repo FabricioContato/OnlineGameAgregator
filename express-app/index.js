@@ -18,7 +18,7 @@ const io = new Server(server, {
     origin: ["http://localhost:3000", "http://localhost:2000"],
   },
 });
-const {ticTacToeSocketHandler, createNewTictactoeRoom} = require("./tictactoesockethandler");
+const {ticTacToeSocketHandler, createNewTictactoeRoom, tictactoeConnectionValidator, addNewPlayer} = require("./tictactoesockethandler");
 
 const CONFLICT_STATUS = 409;
 const OK_STATUS = 200;
@@ -34,10 +34,10 @@ app.post("/newRoom", async (req, res) => {
   const body = req.body;
   console.log(`new room route; req.body: ${JSON.stringify(body)}`);
   const roomCode = body.roomCode;
-  const anwser = await getJsonFromJsonStringFromRedis(roomCode);
-  console.log(`mew room route; anwser to key ${roomCode}:  ${anwser}`);
+  const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
+  console.log(`mew room route; roomJson to key ${roomCode}:  ${roomJson}`);
 
-  if(anwser){
+  if(roomJson){
     console.log("new room route failed");
     res.sendStatus(CONFLICT_STATUS).end();
 
@@ -50,21 +50,43 @@ app.post("/newRoom", async (req, res) => {
 
 app.get("/room/:code", async (req, res) => {
   const roomCode = req.params.code;
-  const anwser = await getJsonFromJsonStringFromRedis(roomCode);
+  const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
 
-  if(!anwser){
+  if(!roomJson){
     res.sendStatus(NOT_FOUND_STATUS).end();
   
   }else{
-    res.json(anwser);
+    res.json(roomJson);
   
   }
 
 });
 
+app.get("/add-player/:code/:nick", async (req, res) => {
+  const roomCode = req.params.code;
+  const nickName = req.params.nick;
+  const json_ = await tictactoeConnectionValidator(roomCode, nickName);
+  
+  if(json_.erro){
+    res.status(json_.status).json(json_);
+    return null;
+  }
+
+  let roomJson
+  if(json_.message !== "AFK user waiting for reconnection!"){
+    roomJson = await addNewPlayer(roomCode, nickName);
+  }
+  else{
+    roomJson = await getJsonFromJsonStringFromRedis(roomCode);
+  }
+
+  res.json(roomJson);
+
+});
+
 io.on("connection", async (socket) => {
-  //const anwser = await client.get("test_key");
-  //console.log(anwser);
+  //const roomJson = await client.get("test_key");
+  //console.log(roomJson);
   if(socket.handshake.query.rootype === 'tic-tac-toe'){
     await ticTacToeSocketHandler(socket, io);
   }

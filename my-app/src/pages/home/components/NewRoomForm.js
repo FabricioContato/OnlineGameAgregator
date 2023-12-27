@@ -158,7 +158,7 @@ function NewRoomForm() {
     const mesageStatus = await fetch(url, postJson).then(response => response.status);
 
     if(mesageStatus === 200){
-      navigate(`/test/${formData.roomCode}`);
+      navigate(`/nick/${formData.roomCode}`);
     }else{
       console.log(`message status: ${formData.roomCode} \n Room was not created.`)
     }

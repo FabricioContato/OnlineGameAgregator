@@ -1,20 +1,24 @@
 import React from "react";
-import { Form, redirect } from "react-router-dom";
+import { Form, redirect, useParams} from "react-router-dom";
 
 export async function action({request, params}){
   const formData = await request.formData();
   const nickName = formData.get("nickname");
   const code = params.code;
-  return redirect(`/test/${code}/${nickName}`);
+  return redirect(`/tictactoe/${code}/${nickName}`);
 }
 
 export default function Nickform() {
+  //const erroMessage = useActionData();
+  const {erro} = useParams();
+
   return (
     <div className="row align-items-center">
     <div
       className="col-12  container p-2 m-lg-2 mt-2 mb-2"
       style={{ backgroundColor: "#eeeeee" }}
     >
+      {erro && <span>"Nick in use!"</span> }
       <div
         className="container-fluid p-2"
         style={{ borderStyle: "dashed", borderColor: "#aaaaaa" }}
