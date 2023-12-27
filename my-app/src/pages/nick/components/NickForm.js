@@ -4,6 +4,9 @@ import { Form, redirect, useParams} from "react-router-dom";
 export async function action({request, params}){
   const formData = await request.formData();
   const nickName = formData.get("nickname");
+  if(nickName === ""){
+    return null;
+  }
   const code = params.code;
   return redirect(`/tictactoe/${code}/${nickName}`);
 }

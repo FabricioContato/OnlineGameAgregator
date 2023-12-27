@@ -3,6 +3,7 @@ import { useParams, useLoaderData, redirect } from "react-router-dom";
 import Players from "./components/Players";
 import TicTactoeGridOfCells from "./components/Tictacttoegrid";
 import ReadyButton from "./components/ReadyButton";
+import ShareButton from "./components/ShareButton";
 import WinnerMessage from "./components/WinnerMessage";
 import { io } from "socket.io-client";
 const URL = "http://localhost:5000";
@@ -27,7 +28,7 @@ export async function loader({ params }){
 
   console.log("load function was successful!");
   const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
-  return {...resJson, socket: socket, userName: userName};
+  return {...resJson, socket: socket,roomCode: roomCode, userName: userName};
   
 }
 
@@ -38,6 +39,7 @@ export async function loader({ params }){
 function TicTacToe() {
   const data = useLoaderData();
   const socket = data.socket;
+  const roomCode = data.roomCode;
   const userName = data.userName;
   const [gameState, setGameState] = React.useState(data.state);
   const [playerOfTheTurn, setPlayerOfTheTurn] = React.useState(data.playerOfTheTurn);
@@ -124,14 +126,26 @@ function TicTacToe() {
     socket.emit("ready");
   }
 
-  const readyButtonDiv =  <div className="d-flex justify-content-center"> 
-                            <ReadyButton disabled={false} onClickHandler={readyButtonHandleClick} />
-                          </div>;
+  function shareButtonHandleClick(){
+    const url = `localhost:3000/nick/${roomCode}`;
+    navigator.clipboard.writeText(url);
+  }
+
+  const buttonsDiv =  (
+                            <div className="row justify-content-center">
+                              <div className="col-6 ">
+                                <ReadyButton disabled={false} onClickHandler={readyButtonHandleClick} />
+                              </div>
+                              <div className="col-6 ">
+                                <ShareButton disabled={false} onClickHandler={shareButtonHandleClick} />
+                              </div>
+                            </div>
+                          );
 
   function conditionalRenderingByGameState(){
     switch(gameState){
       case "pre-start":
-        return readyButtonDiv;
+        return buttonsDiv;
       
       case "started":
         return <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} />;
@@ -139,7 +153,7 @@ function TicTacToe() {
       case "finished":
         return (<>
                   <WinnerMessage message= {winner === userName ? "You Won": "You Lost" } />
-                  {readyButtonDiv}
+                  {buttonsDiv}
                   <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} />
                 </>)
 
