@@ -3,13 +3,14 @@ import checkerImage from "./images/Checker_card_image.png"
 import bombGameImage from "./images/Bomb_game_card_image.png"
 import chessImage from "./images/Chess_card_image.png"
 import LudoImage from "./images/Ludo_card_image.png"
+import TicTacToeImage from "./images/TictactoeCardImage.png"
 
 export const cardList = [
   {
-    "url": LudoImage,
-    "title": "Ludo",
-    "id": "Ludo",
-    "text": "Classic Ludo",
+    "url": TicTacToeImage,
+    "title": "Tic-Tac-Toe",
+    "id": "tictactoe",
+    "text": "Classic Tic-Tac-Toe",
     "name": "roomType",
     "active": false
   },

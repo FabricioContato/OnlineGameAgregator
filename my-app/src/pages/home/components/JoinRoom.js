@@ -1,8 +1,8 @@
 import React from "react";
 import { Form, redirect, useParams} from "react-router-dom";
 
-export async function action({request}){
-  const formData = await request.formData();
+export async function action(formData){
+  //const formData = await request.formData();
   const roomCode = formData.get("roomCode");
   const test = formData.get("joinRoom");
   console.log(test);
@@ -15,7 +15,11 @@ export async function action({request}){
 }
 
 function JoinRoom() {
+  const [value, setValue] = React.useState("-");
 
+  function clickHandler(){
+    setValue("button Clicked");
+  }
   return (
     <React.StrictMode>
     <div className="container p-2 m-lg-2 mt-2 mb-2" style={{ backgroundColor: "#eeeeee" }}>
@@ -25,7 +29,7 @@ function JoinRoom() {
       >
         <div className="contairer"> Join a room</div>
         <Form method="post" className="row">
-         <input type="hidden" name="joinRoom" value="joinRoom" />
+        <input type="hidden" name="Form" value="JoinRoomForm" />
           <div className="col-2 ">
             <div className="code">Code</div>
           </div>

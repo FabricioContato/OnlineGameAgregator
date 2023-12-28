@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { cardList } from "./cardList";
 import { socket } from "./socketHandler";
-import { Link, useNavigate } from "react-router-dom";
+import {Form, Link, useNavigate } from "react-router-dom";
 
 const radioButtonsList = [
   {
@@ -22,7 +22,7 @@ const radioButtonsList = [
   },
 ];
 
-function Card({ url, id, name, title, text, active, cardClick }) {
+function Card({ url, id, name, title, text, active, cardClick}) {
   const cardStyle = active
     ? { backgroundColor: "#888888", borderColor: "#888888", height: "280px" }
     : { backgroundColor: "#ffffff", borderColor: "#000000", height: "280px" };
@@ -31,10 +31,11 @@ function Card({ url, id, name, title, text, active, cardClick }) {
     <div
       className="card"
       style={cardStyle}
-      onClick={cardClick}
       id={id}
+      onClick={cardClick}
       name={name}
     >
+      <input type="hidden" name="cardButton" value={active ? title : ""} />
       <img className="card-img-top" src={url} alt="" />
       <div className="card-body">
         <div
@@ -74,7 +75,7 @@ function ButtonGroup({ radioButtons, handleChange }) {
   );
 }
 
-function CardOptions({ cards, cardClick }) {
+function CardOptions({cards, cardClick}) {
   const bootstrapColNumber = Math.floor(12 / cards.length);
 
   const cardElements = cards.map((card, index) => {
@@ -86,113 +87,58 @@ function CardOptions({ cards, cardClick }) {
           title={card.title}
           text={card.text}
           name={card.name}
+          cardClick={() => cardClick(card.title)}
           active={card.active}
-          cardClick={() => cardClick(card.name, card.title)}
         />
       </div>
     );
   });
 
-  return <form className="row">{cardElements}</form>;
+  return <div className="row">{cardElements}</div>;
+}
+
+export async function action(formData){
+  //const formData = await request.formData();
+  const cardValues = formData.getAll("cardButton");
+  let activeCard;
+  for(let value of cardValues){
+    if(value !== ""){
+      activeCard = value;
+    }
+  }
+  console.log(activeCard);
+  return null;
 }
 
 function NewRoomForm() {
-  const [formData, setFormData] = React.useState({
-    roomCode: "",
-    roomPrivace: "Public",
-    roomType: "",
-  });
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    socket.connect();
-
-    function messageHandler(msg) {
-      console.log(msg);
-    }
-
-    socket.on("message", messageHandler);
-
-    return () => {
-      socket.off("message", messageHandler);
-    };
-  }, [0]);
-
-  function setActiveCard(cardList) {
-    return cardList.map((card) => {
-      return card.id === formData.roomType ? { ...card, active: true } : card;
-    });
-  }
-
-  const cards = setActiveCard(cardList);
-  //console.log(cards);
-
-  function setActiveRadioButtons(radioButtonsList) {
-    //console.log("raduibyttib click");
-    return radioButtonsList.map((radioButton) =>
-      radioButton.value === formData.roomPrivace
-        ? { ...radioButton, checked: true }
-        : radioButton
-    );
-  }
-
-  const radioButtons = setActiveRadioButtons(radioButtonsList);
-
-  function handleChange(event) {
-    const name = event.target.name;
-    //console.log(`handleChange name: ${name}, value ${event.target.value}`);
-    setFormData((prevFormData) => {
-      return {
-        ...prevFormData,
-        [name]: event.target.value,
-      };
-    });
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    const url = "http://127.0.0.1:5000/newRoom";
-    const urlObj = new URLSearchParams();
-    urlObj.append("roomCode", formData.roomCode)
-    const postJson = { method: "POST",  body: urlObj}
-    const mesageStatus = await fetch(url, postJson).then(response => response.status);
-
-    if(mesageStatus === 200){
-      navigate(`/nick/${formData.roomCode}`);
-    }else{
-      console.log(`message status: ${formData.roomCode} \n Room was not created.`)
-    }
-
-    /* socket.timeout(3000).emit("newRoom", formData, (err, response) => {
-      if(err){
-        console.log("server did not acknowledge the event in the given delay");
-      }else{
-        console.log(response.status);
+  const [cards, setCards] = React.useState(cardList);
+  
+  function handleCardClick(title){
+    const cardListCopy = JSON.parse(JSON.stringify(cardList));
+    for(let i in cardListCopy){
+      if(cardListCopy[i].title === title){
+        cardListCopy[i].active = true;
+        break;
       }
-    }) */
-  }
-
-  function handleClick(name, value) {
-    //console.log("ok");
-    setFormData((prevFormData) => {
-      return { ...prevFormData, [name]: value };
-    });
+    }
+    setCards(cardListCopy);
   }
 
   return (
     <React.StrictMode>
-      <div
+      <Form method="post"
         className="container p-2 m-lg-2 mt-2 mb-2"
         style={{ backgroundColor: "#eeeeee" }}
       >
+        <input type="hidden" name="Form" value="NewRoomForm" />
         <div
           className="container-fluid p-2"
           style={{ borderStyle: "dashed", borderColor: "#aaaaaa" }}
         >
           <div className="contaienr"> Start a new room</div>
-          <CardOptions cards={cards} cardClick={handleClick} />
+          <CardOptions cards={cards} cardClick={handleCardClick} />
           <hr />
-          <form className="row" onSubmit={handleSubmit}>
+          <div className="row" >
             <div className="col-sm-2 m-sm-0 col-2 m-1">
               <div className="code">Code</div>
             </div>
@@ -201,16 +147,14 @@ function NewRoomForm() {
                 className="form-control"
                 type="text"
                 name="roomCode"
-                onChange={handleChange}
-                value={formData.roomCode}
               />
             </div>
-            <div className="col-sm-4 m-sm-0 col-6 m-1">
+            {/* <div className="col-sm-4 m-sm-0 col-6 m-1">
               <ButtonGroup
                 radioButtons={radioButtons}
                 handleChange={handleChange}
               />
-            </div>
+            </div> */}
             <div className="col-sm-2 m-sm-0 col-4 m-1">
               <input 
                 className="btn btn-primary" 
@@ -218,9 +162,9 @@ function NewRoomForm() {
                 value="Start"
               />
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      </Form>
     </React.StrictMode>
   );
 }
