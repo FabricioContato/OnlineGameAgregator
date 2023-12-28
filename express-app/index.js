@@ -30,21 +30,21 @@ app.get("/", (req, res) => {
 });
 
 app.post("/newRoom", async (req, res) => {
-  console.log("new room route");
   const body = req.body;
-  console.log(`new room route; req.body: ${JSON.stringify(body)}`);
   const roomCode = body.roomCode;
+  const roomType = body.roomType;
   const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
-  console.log(`mew room route; roomJson to key ${roomCode}:  ${roomJson}`);
 
   if(roomJson){
     console.log("new room route failed");
     res.sendStatus(CONFLICT_STATUS).end();
 
-  }else{
+  }else if(roomType === "Tic-Tac-Toe"){
     await createNewTictactoeRoom(roomCode);
     res.sendStatus(OK_STATUS).end();
   
+  }else{
+    res.sendStatus(404).end();
   }
 });
 

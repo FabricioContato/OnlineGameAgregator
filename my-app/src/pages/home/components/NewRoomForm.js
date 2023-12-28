@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { cardList } from "./cardList";
 import { socket } from "./socketHandler";
-import {Form, Link, useNavigate } from "react-router-dom";
+import {Form, Link, redirect } from "react-router-dom";
 
 const radioButtonsList = [
   {
@@ -100,14 +100,31 @@ function CardOptions({cards, cardClick}) {
 export async function action(formData){
   //const formData = await request.formData();
   const cardValues = formData.getAll("cardButton");
-  let activeCard;
+  let activeCard = "";
   for(let value of cardValues){
     if(value !== ""){
       activeCard = value;
     }
   }
-  console.log(activeCard);
-  return null;
+  const roomCode = formData.get("roomCode");
+  
+  if(activeCard === "" || roomCode == ""){
+    return null;
+  }
+  else{
+    const url = "http://127.0.0.1:5000/newRoom";
+    const urlObj = new URLSearchParams();
+    urlObj.append("roomCode", roomCode);
+    urlObj.append("roomType", activeCard);
+    const postJson = { method: "POST",  body: urlObj}
+    const responseStatus = await fetch(url, postJson).then(response => response.status);
+    if(responseStatus === 200 ){
+      return redirect(`/nick/${roomCode}`)
+    }else {
+      console.log(`message status: ${roomCode} \n Room was not created.`);
+      return null;
+    }
+  }
 }
 
 function NewRoomForm() {
