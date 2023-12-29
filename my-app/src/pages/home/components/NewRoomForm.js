@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { cardList } from "./cardList";
 import { socket } from "./socketHandler";
-import {Form, Link, redirect } from "react-router-dom";
+import {Form, Link, redirect, useActionData } from "react-router-dom";
 
 const radioButtonsList = [
   {
@@ -108,9 +108,14 @@ export async function action(formData){
   }
   const roomCode = formData.get("roomCode");
   
-  if(activeCard === "" || roomCode == ""){
-    return null;
+  if(activeCard === ""){
+    return {form: "NewRoomForm", message: "Select a game!"};
   }
+
+  if(roomCode === ""){
+      return {form: "NewRoomForm", message: "Entar a room code!"};
+  }
+
   else{
     const url = "http://127.0.0.1:5000/newRoom";
     const urlObj = new URLSearchParams();
@@ -119,16 +124,16 @@ export async function action(formData){
     const postJson = { method: "POST",  body: urlObj}
     const responseStatus = await fetch(url, postJson).then(response => response.status);
     if(responseStatus === 200 ){
-      return redirect(`/nick/${roomCode}`)
+      return redirect(`/nick/${roomCode}`);
     }else {
-      console.log(`message status: ${roomCode} \n Room was not created.`);
-      return null;
+      return {form : "NewRoomForm", message: "This room code alredy is in use!"};
     }
   }
 }
 
 function NewRoomForm() {
   const [cards, setCards] = React.useState(cardList);
+  const erro = useActionData();
   
   function handleCardClick(title){
     const cardListCopy = JSON.parse(JSON.stringify(cardList));
@@ -156,6 +161,9 @@ function NewRoomForm() {
           <CardOptions cards={cards} cardClick={handleCardClick} />
           <hr />
           <div className="row" >
+            {erro && erro.form === "NewRoomForm" && <div className="col-12 d-flex justify-content-center">
+              {erro.message}
+            </div>}
             <div className="col-sm-2 m-sm-0 col-2 m-1">
               <div className="code">Code</div>
             </div>

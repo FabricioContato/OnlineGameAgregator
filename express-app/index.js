@@ -42,7 +42,6 @@ app.post("/newRoom", async (req, res) => {
   }else if(roomType === "Tic-Tac-Toe"){
     await createNewTictactoeRoom(roomCode);
     res.sendStatus(OK_STATUS).end();
-  
   }else{
     res.sendStatus(404).end();
   }
@@ -56,7 +55,7 @@ app.get("/room/:code", async (req, res) => {
     res.sendStatus(NOT_FOUND_STATUS).end();
   
   }else{
-    res.json(roomJson);
+    res.sendStatus(OK_STATUS).end();
   
   }
 

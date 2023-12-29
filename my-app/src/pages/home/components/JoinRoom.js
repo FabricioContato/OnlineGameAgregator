@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, redirect, useParams} from "react-router-dom";
+import { Form, redirect, useActionData} from "react-router-dom";
 
 export async function action(formData){
   //const formData = await request.formData();
@@ -7,19 +7,21 @@ export async function action(formData){
   const test = formData.get("joinRoom");
   console.log(test);
   if(roomCode === ""){
-    return null;
+    return {form: "JoinRoomForm", message:"Enter a room code!"};
   }
+  const response = await fetch(`http://127.0.0.1:5000/room/${roomCode}`);
+
+  if(response.status !== 200){
+    return {form:"JoinRoomForm", message: "Room code not found!"};
+  }
+
   const url = `/nick/${roomCode}`;
   return redirect(url);
 
 }
 
 function JoinRoom() {
-  const [value, setValue] = React.useState("-");
-
-  function clickHandler(){
-    setValue("button Clicked");
-  }
+  const erro = useActionData();
   return (
     <React.StrictMode>
     <div className="container p-2 m-lg-2 mt-2 mb-2" style={{ backgroundColor: "#eeeeee" }}>
@@ -29,6 +31,9 @@ function JoinRoom() {
       >
         <div className="contairer"> Join a room</div>
         <Form method="post" className="row">
+        {erro && erro.form === "JoinRoomForm" && <div className="col-12 d-flex justify-content-center">
+              {erro.message}
+            </div>}
         <input type="hidden" name="Form" value="JoinRoomForm" />
           <div className="col-2 ">
             <div className="code">Code</div>
