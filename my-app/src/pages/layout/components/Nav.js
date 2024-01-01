@@ -9,9 +9,9 @@ function Nav() {
       >
         <div className="container-fluid">
           <Link to="http://localhost:3000/" style={{textDecoration: "none"}}>
-            <div className="navbar-brand"> JKLM.fun </div>
+            <div className="navbar-brand"> FFA.fun </div>
           </Link>
-          <form action="" className="d-flex">
+          {/* <form action="" className="d-flex">
             <span className="d-flex btn btn-primary">
               <img
                 className="img-fluid p-1"
@@ -21,7 +21,7 @@ function Nav() {
               />
               user name
             </span>
-          </form>
+          </form> */}
         </div>
       </nav>
     );
