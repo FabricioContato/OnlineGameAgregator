@@ -13,7 +13,6 @@ async function jsonStringIntoRedis(key, json) {
 }
 
 async function getJsonFromJsonStringFromRedis(key) {
-  //console.log('getJsonFromJsonStringFromRedis');
   const jsonStr = await client.get(key);
   return JSON.parse(jsonStr);
 }

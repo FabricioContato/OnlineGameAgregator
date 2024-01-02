@@ -8,7 +8,6 @@ import heroImage from "./components/images/jklm_hero_image_react_bootstrap.png";
 export async function action({request}){
   const formData = await request.formData();
   const form = formData.get("Form");
-  console.log(form);
 
   return form === "NewRoomForm" ? NewRoomFormAction(formData) : JoinRoomAction(formData);
 }

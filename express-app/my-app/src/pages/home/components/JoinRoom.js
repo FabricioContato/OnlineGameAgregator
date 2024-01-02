@@ -1,15 +1,15 @@
 import React from "react";
+import { domain } from "../../../domain";
 import { Form, redirect, useActionData} from "react-router-dom";
 
 export async function action(formData){
   //const formData = await request.formData();
   const roomCode = formData.get("roomCode");
   const test = formData.get("joinRoom");
-  console.log(test);
   if(roomCode === ""){
     return {form: "JoinRoomForm", message:"Enter a room code!"};
   }
-  const response = await fetch(`http://127.0.0.1:5000/room/${roomCode}`);
+  const response = await fetch(`http://${domain}/room/${roomCode}`);
 
   if(response.status !== 200){
     return {form:"JoinRoomForm", message: "Room code not found!"};

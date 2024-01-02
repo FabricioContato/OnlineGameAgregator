@@ -1,6 +1,7 @@
+const path = require('path');
 const express = require("express");
 const app = express();
-const PORT = 5000;
+const PORT = 80;
 const cors = require("cors");
 app.use(cors());
 const bodyParser = require('body-parser');
@@ -13,21 +14,20 @@ const { createServer } = require("node:http");
 const { Server } = require("socket.io");
 const { Socket } = require("node:dgram");
 const server = createServer(app);
-const io = new Server(server, {
+/* const io = new Server(server, {
   cors: {
     origin: ["http://localhost:3000", "http://localhost:2000"],
   },
-});
+}); */
+const io = new Server(server);
 const {ticTacToeSocketHandler, createNewTictactoeRoom, tictactoeConnectionValidator, addNewPlayer} = require("./tictactoesockethandler");
 
 const CONFLICT_STATUS = 409;
 const OK_STATUS = 200;
 const NOT_FOUND_STATUS = 404;
 
-app.get("/", (req, res) => {
-  console.log("get/ ok");
-  res.json({ answer: "express ok" });
-});
+const buildPath = path.join(__dirname, 'my-app/build');
+app.use(express.static(buildPath));
 
 app.post("/newRoom", async (req, res) => {
   const body = req.body;
@@ -36,7 +36,6 @@ app.post("/newRoom", async (req, res) => {
   const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
 
   if(roomJson){
-    console.log("new room route failed");
     res.sendStatus(CONFLICT_STATUS).end();
 
   }else if(roomType === "Tic-Tac-Toe"){
@@ -83,9 +82,11 @@ app.get("/add-player/:code/:nick", async (req, res) => {
 
 });
 
+app.get("*", (req, res) => {
+  res.sendFile(buildPath + "/index.html");
+});
+
 io.on("connection", async (socket) => {
-  //const roomJson = await client.get("test_key");
-  //console.log(roomJson);
   if(socket.handshake.query.rootype === 'tic-tac-toe'){
     await ticTacToeSocketHandler(socket, io);
   }

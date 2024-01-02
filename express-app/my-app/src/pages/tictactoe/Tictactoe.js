@@ -6,27 +6,25 @@ import ReadyButton from "./components/ReadyButton";
 import ShareButton from "./components/ShareButton";
 import WinnerMessage from "./components/WinnerMessage";
 import { io } from "socket.io-client";
-const URL = "http://localhost:5000";
+import { domain } from "../../domain";
+const URL = `http://${domain}`;
 
 export async function loader({ params }){
   const roomCode = params.code;
   const userName = params.username;
-  const url = `http://127.0.0.1:5000/add-player/${roomCode}/${userName}`;
+  const url = `http://${domain}/add-player/${roomCode}/${userName}`;
   
   const response = await fetch(url);
   const resJson = await response.json();
 
   if(resJson.message === "Nickname is already in use!"){
-    console.log("Nickname is already in use! erro");
     return redirect(`/nick/${roomCode}/409`);
   }
 
   if(resJson.message === "The Room is full" || response.status === 404){
-    console.log(resJson.message);
     throw {erroMessage: resJson.message};
   }
 
-  console.log("load function was successful!");
   const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
   return {...resJson, socket: socket,roomCode: roomCode, userName: userName};
   
@@ -127,7 +125,7 @@ function TicTacToe() {
   }
 
   function shareButtonHandleClick(){
-    const url = `localhost:3000/nick/${roomCode}`;
+    const url = `${domain}/nick/${roomCode}`;
     navigator.clipboard.writeText(url);
   }
 

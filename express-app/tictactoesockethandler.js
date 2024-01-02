@@ -44,7 +44,6 @@ async function winCondition(cellsRows, players){
   ]
 
   for(let arr of auxArr){
-    console.log(arr);
     if(arr.includes("blank")){
       continue;
     }
@@ -230,7 +229,6 @@ async function connection(socket, io) {
   await jsonStringIntoRedis(room, roomJson);
   socket.join(room);
   io.to(room).emit("player-joins", roomJson.players, roomJson.playerOfTheTurn);
-  console.log("connected");
   return true;
 }
 
@@ -243,13 +241,11 @@ async function ticTacToeSocketHandler(socket, io) {
 
   async function disconnect(){
 
-    console.log("diconnected");
     const room = socket.handshake.query.room;
   
     const sockerIdMembersSet = io.sockets.adapter.rooms.get(room);
     if (!sockerIdMembersSet) {
       await client.del(room);
-      console.log("room key deleted from redis");
       return null;
     }
   
@@ -282,7 +278,6 @@ async function ticTacToeSocketHandler(socket, io) {
     const roomJson = await getJsonFromJsonStringFromRedis(room);
   
     if(roomJson.state !== "started"){
-      console.log("Wait for other players to get ready!");
       return null;
     }
   
@@ -291,24 +286,14 @@ async function ticTacToeSocketHandler(socket, io) {
     const playerOfTheTurn = roomJson.playerOfTheTurn;
 
     if(playerOfTheTurn !== userName) {
-      console.log("not your turn");
       return "none";
     }
-  
-   /*  const sockerIdMembersSet = io.sockets.adapter.rooms.get(room);
-    const sockerIdMembersArray = Array.from(sockerIdMembersSet);
-  
-    if (sockerIdMembersArray.length <= 1) {
-      console.log("wait for other player to join");
-      return "none";
-    } */
   
     const rowIndex = Math.floor(cellId / 3);
     const cellIndex = cellId - rowIndex * 3;
     const cellsRows = roomJson.cellsRows;
     const currentCellCode = cellsRows[rowIndex][cellIndex].imageSimbleCode;
     if (["x", "circle"].includes(currentCellCode)) {
-      console.log(`you can't click at cell: ${cellId}`);
       return "none";
     }
   
@@ -319,7 +304,6 @@ async function ticTacToeSocketHandler(socket, io) {
     roomJson.cellsRows = newCellsRoows;
   
     const winnerPlayer = await winCondition(newCellsRoows, roomJson.players);
-    console.log(winnerPlayer);
   
     const newPlayerOfTheTurn = await getNextPlayerOfTheTurn(roomJson.players, roomJson.playerOfTheTurn);
     roomJson.playerOfTheTurn = newPlayerOfTheTurn; 
@@ -327,7 +311,6 @@ async function ticTacToeSocketHandler(socket, io) {
     
     //state: "pre-start"
     if(winnerPlayer){
-      console.log(`palyer winns: ${winnerPlayer}`);
       roomJson.state = "finished";
       roomJson.players = await setPlayersSatate(roomJson.players, "UN-READY");
       roomJson.cellsRows = await getNewStartCellsRowsList();

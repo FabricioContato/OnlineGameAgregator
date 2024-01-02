@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { cardList } from "./cardList";
 import { socket } from "./socketHandler";
 import {Form, Link, redirect, useActionData } from "react-router-dom";
+import { domain } from "../../../domain";
 
 const radioButtonsList = [
   {
@@ -117,7 +118,7 @@ export async function action(formData){
   }
 
   else{
-    const url = "http://127.0.0.1:5000/newRoom";
+    const url = `http://${domain}/newRoom`;
     const urlObj = new URLSearchParams();
     urlObj.append("roomCode", roomCode);
     urlObj.append("roomType", activeCard);
