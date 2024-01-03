@@ -12,6 +12,7 @@ const routers = createBrowserRouter(createRoutesFromElements(
     <Route path="/" element={<Home />} action={HomeAction} />
     <Route path="/nick/:code/:erro?" errorElement={<Erro />} action={nickAction} element={<Nick />} />
     <Route path="/tictactoe/:code/:username" errorElement={<Erro />} element={<TicTacToe />} loader={TicTacToeLoader} />
+    <Route path="*" element={<Erro/>} />
   </Route>
 ));
 
