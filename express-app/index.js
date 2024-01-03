@@ -14,12 +14,9 @@ const { createServer } = require("node:http");
 const { Server } = require("socket.io");
 const { Socket } = require("node:dgram");
 const server = createServer(app);
-/* const io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:3000", "http://localhost:2000"],
-  },
-}); */
-const io = new Server(server);
+const json_ = process.env.NODE_ENV === "development" ? {cors: {origin: ["http://localhost:3000", "http://localhost:2000"],},} : {};
+console.log(process.env.NODE_ENV);
+const io = new Server(server, json_);
 const {ticTacToeSocketHandler, createNewTictactoeRoom, tictactoeConnectionValidator, addNewPlayer} = require("./tictactoesockethandler");
 
 const CONFLICT_STATUS = 409;
