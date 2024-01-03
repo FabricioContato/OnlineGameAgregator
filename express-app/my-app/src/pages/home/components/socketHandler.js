@@ -1,4 +1,4 @@
 import { io } from 'socket.io-client';
-import { domain } from '../../../domain';
-const URL = `http://${domain}`;
+import { apiDomain } from '../../../domain';
+const URL = `${apiDomain}`;
 export const socket = io(URL, {autoConnect: false});

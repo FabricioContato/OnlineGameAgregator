@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { domain } from "../../../domain";
+import { appDomain } from "../../../domain";
 
 function Nav() {
     return (
@@ -9,7 +9,7 @@ function Nav() {
         style={{ backgroundColor: "#7855c7", color: "white" }}
       >
         <div className="container-fluid">
-          <Link to={`http://${domain}/ `} style={{textDecoration: "none"}}>
+          <Link to={`${appDomain}/ `} style={{textDecoration: "none"}}>
             <div className="navbar-brand"> FFA.fun </div>
           </Link>
           {/* <form action="" className="d-flex">

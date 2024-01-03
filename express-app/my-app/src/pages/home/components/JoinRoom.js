@@ -1,5 +1,5 @@
 import React from "react";
-import { domain } from "../../../domain";
+import {apiDomain} from "../../../domain";
 import { Form, redirect, useActionData} from "react-router-dom";
 
 export async function action(formData){
@@ -9,7 +9,7 @@ export async function action(formData){
   if(roomCode === ""){
     return {form: "JoinRoomForm", message:"Enter a room code!"};
   }
-  const response = await fetch(`http://${domain}/room/${roomCode}`);
+  const response = await fetch(`${apiDomain}/room/${roomCode}`);
 
   if(response.status !== 200){
     return {form:"JoinRoomForm", message: "Room code not found!"};

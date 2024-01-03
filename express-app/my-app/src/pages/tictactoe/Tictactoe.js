@@ -6,13 +6,13 @@ import ReadyButton from "./components/ReadyButton";
 import ShareButton from "./components/ShareButton";
 import WinnerMessage from "./components/WinnerMessage";
 import { io } from "socket.io-client";
-import { domain } from "../../domain";
-const URL = `http://${domain}`;
+import { apiDomain, appDomain } from "../../domain";
+const URL = `${apiDomain}`;
 
 export async function loader({ params }){
   const roomCode = params.code;
   const userName = params.username;
-  const url = `http://${domain}/add-player/${roomCode}/${userName}`;
+  const url = `${apiDomain}/add-player/${roomCode}/${userName}`;
   
   const response = await fetch(url);
   const resJson = await response.json();
@@ -125,7 +125,7 @@ function TicTacToe() {
   }
 
   function shareButtonHandleClick(){
-    const url = `${domain}/nick/${roomCode}`;
+    const url = `${appDomain}/nick/${roomCode}`;
     navigator.clipboard.writeText(url);
   }
 
