@@ -43,10 +43,13 @@ async function winCondition(cellsRows, players){
     [cellsRows[0][2].imageSimbleCode, cellsRows[1][1].imageSimbleCode, cellsRows[2][0].imageSimbleCode]
   ]
 
+  let filledRowsCounter = 0;
+
   for(let arr of auxArr){
     if(arr.includes("blank")){
       continue;
     }
+    filledRowsCounter += 1;
 
     if(arr.includes("circle") && !arr.includes("x")){
       return await userNameBySimble("circle", players);
@@ -55,6 +58,11 @@ async function winCondition(cellsRows, players){
     if(arr.includes("x") && !arr.includes("circle")){
       return await userNameBySimble("x", players);
     }
+  }
+
+  if(filledRowsCounter === auxArr.length){
+    //All rows are filled but no player won!
+    return "draw";
   }
 
   //no winner yet!

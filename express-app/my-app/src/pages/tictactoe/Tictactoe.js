@@ -150,7 +150,7 @@ function TicTacToe() {
 
       case "finished":
         return (<>
-                  <WinnerMessage message= {winner === userName ? "You Won": "You Lost" } />
+                  <WinnerMessage message= {winner === "draw" ? "Draw": `${winner} won!` } />
                   {buttonsDiv}
                   <TicTactoeGridOfCells cellsRows={cellsRows} handleClick={cellHandleClick} />
                 </>)
