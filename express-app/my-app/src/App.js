@@ -3,6 +3,7 @@ import Layout from "./pages/layout/Layout";
 import Home, {action as HomeAction} from "./pages/home/Home";
 import TicTacToe, {loader as TicTacToeLoader} from "./pages/tictactoe/Tictactoe";
 import Nick, {action as nickAction} from "./pages/nick/Nick";
+import Checkers from "./pages/chekers/Checkers";
 import Erro from "./pages/erro/Erro";
 import { RouterProvider, createBrowserRouter, createRoutesFromElements, Link, Route } from "react-router-dom";
 
@@ -12,6 +13,7 @@ const routers = createBrowserRouter(createRoutesFromElements(
     <Route path="/" element={<Home />} action={HomeAction} />
     <Route path="/nick/:code/:erro?" errorElement={<Erro />} action={nickAction} element={<Nick />} />
     <Route path="/tictactoe/:code/:username" errorElement={<Erro />} element={<TicTacToe />} loader={TicTacToeLoader} />
+    <Route path="/checkers" element={<Checkers />} action={HomeAction} />
     <Route path="*" element={<Erro/>} />
   </Route>
 ));
