@@ -18,6 +18,7 @@ const json_ = process.env.NODE_ENV === "development" ? {cors: {origin: ["http://
 console.log(process.env.NODE_ENV);
 const io = new Server(server, json_);
 const {ticTacToeSocketHandler, createNewTictactoeRoom, tictactoeConnectionValidator, addNewPlayer} = require("./tictactoesockethandler");
+const {createNewCheckersRoom, checkersConnectionValidator, checkersSocketHandler} = require("./checkerssockethandler.js");
 
 const CONFLICT_STATUS = 409;
 const OK_STATUS = 200;
@@ -38,6 +39,10 @@ app.post("/newRoom", async (req, res) => {
   }else if(roomType === "Tic-Tac-Toe"){
     await createNewTictactoeRoom(roomCode);
     res.sendStatus(OK_STATUS).end();
+  }
+  else if(roomType == "Checkers"){
+    await createNewCheckersRoom(roomCode);
+    res.sendStatus(OK_STATUS).end();
   }else{
     res.sendStatus(404).end();
   }
@@ -57,17 +62,25 @@ app.get("/room/:code", async (req, res) => {
 
 });
 
-app.get("/add-player/:code/:nick", async (req, res) => {
+app.get("/add-player/:code/:roomtype/:nick", async (req, res) => {
   const roomCode = req.params.code;
+  const roomType = req.params.roomtype;
   const nickName = req.params.nick;
-  const json_ = await tictactoeConnectionValidator(roomCode, nickName);
+
+  let json_;
+  if(roomType === "Tic-Tac-Toe"){
+    json_ = await tictactoeConnectionValidator(roomCode, nickName);
+  }
+  else if(roomType === "Checkers"){
+    json_ = await checkersConnectionValidator(roomCode, nickName);
+  }
   
   if(json_.erro){
     res.status(json_.status).json(json_);
     return null;
   }
 
-  let roomJson
+  let roomJson;
   if(json_.message !== "AFK user waiting for reconnection!"){
     roomJson = await addNewPlayer(roomCode, nickName);
   }
@@ -79,14 +92,30 @@ app.get("/add-player/:code/:nick", async (req, res) => {
 
 });
 
+/* app.get("/checkers/:code", async (req, res) => {
+  //const mockRows=[[{id:"0",imageSimbleCode:"whitePiece"},{id:"1",imageSimbleCode:"brow"},{id:"2",imageSimbleCode:"whitePiece"},{id:"3",imageSimbleCode:"brow"},{id:"4",imageSimbleCode:"whitePiece"},{id:"5",imageSimbleCode:"brow"},{id:"6",imageSimbleCode:"whitePiece"},{id:"7",imageSimbleCode:"brow"}],[{id:"8",imageSimbleCode:"brow"},{id:"9",imageSimbleCode:"whitePiece"},{id:"10",imageSimbleCode:"brow"},{id:"11",imageSimbleCode:"whitePiece"},{id:"12",imageSimbleCode:"brow"},{id:"13",imageSimbleCode:"whitePiece"},{id:"14",imageSimbleCode:"brow"},{id:"15",imageSimbleCode:"whitePiece"}],[{id:"16",imageSimbleCode:"whitePiece"},{id:"17",imageSimbleCode:"brow"},{id:"18",imageSimbleCode:"whitePiece"},{id:"19",imageSimbleCode:"brow"},{id:"20",imageSimbleCode:"whitePiece"},{id:"21",imageSimbleCode:"brow"},{id:"22",imageSimbleCode:"whitePiece"},{id:"23",imageSimbleCode:"brow"}],[{id:"24",imageSimbleCode:"brow"},{id:"25",imageSimbleCode:"wood"},{id:"26",imageSimbleCode:"brow"},{id:"27",imageSimbleCode:"wood"},{id:"28",imageSimbleCode:"brow"},{id:"29",imageSimbleCode:"wood"},{id:"30",imageSimbleCode:"brow"},{id:"31",imageSimbleCode:"wood"}],[{id:"32",imageSimbleCode:"wood"},{id:"33",imageSimbleCode:"brow"},{id:"34",imageSimbleCode:"wood"},{id:"35",imageSimbleCode:"brow"},{id:"36",imageSimbleCode:"wood"},{id:"37",imageSimbleCode:"brow"},{id:"38",imageSimbleCode:"wood"},{id:"39",imageSimbleCode:"brow"}],[{id:"40",imageSimbleCode:"brow"},{id:"41",imageSimbleCode:"redPiece"},{id:"42",imageSimbleCode:"brow"},{id:"43",imageSimbleCode:"redPiece"},{id:"44",imageSimbleCode:"brow"},{id:"45",imageSimbleCode:"redPiece"},{id:"46",imageSimbleCode:"brow"},{id:"47",imageSimbleCode:"redPiece"}],[{id:"48",imageSimbleCode:"redPiece"},{id:"49",imageSimbleCode:"brow"},{id:"50",imageSimbleCode:"redPiece"},{id:"51",imageSimbleCode:"brow"},{id:"52",imageSimbleCode:"redPiece"},{id:"53",imageSimbleCode:"brow"},{id:"54",imageSimbleCode:"redPiece"},{id:"55",imageSimbleCode:"brow"}],[{id:"56",imageSimbleCode:"brow"},{id:"57",imageSimbleCode:"redPiece"},{id:"58",imageSimbleCode:"brow"},{id:"59",imageSimbleCode:"redPiece"},{id:"60",imageSimbleCode:"brow"},{id:"61",imageSimbleCode:"redPiece"},{id:"62",imageSimbleCode:"brow"},{id:"63",imageSimbleCode:"redPiece"}]];
+  const roomCode = req.params.code;
+  const roomJson = await getJsonFromJsonStringFromRedis(roomCode);
+  res.json({mockRows: roomJson.cellsRows});
+}) */
+
 app.get("*", (req, res) => {
   res.sendFile(buildPath + "/index.html");
 });
 
 io.on("connection", async (socket) => {
-  if(socket.handshake.query.rootype === 'tic-tac-toe'){
+  const roomType = socket.handshake.query.rootype;
+  if(roomType === 'Tic-Tac-Toe'){
     await ticTacToeSocketHandler(socket, io);
   }
+  else if(roomType === 'Checkers'){
+    await checkersSocketHandler(socket, io);
+
+  }
+  /* else if(socket.handshake.query.rootype === 'checkers'){
+    await ticTacToeSocketHandler(socket, io);
+  } */
+
 });
 
 server.listen(PORT, () => console.log(`Express app listening at port ${PORT}`));

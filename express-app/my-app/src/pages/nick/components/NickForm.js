@@ -8,7 +8,8 @@ export async function action({request, params}){
     return null;
   }
   const code = params.code;
-  return redirect(`/tictactoe/${code}/${nickName}`);
+  const roomType = params.roomtype;
+  return redirect(`/${roomType}/${code}/${nickName}`);
 }
 
 export default function Nickform() {

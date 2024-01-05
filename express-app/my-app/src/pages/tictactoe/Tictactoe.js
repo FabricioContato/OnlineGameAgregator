@@ -12,20 +12,20 @@ const URL = `${apiDomain}`;
 export async function loader({ params }){
   const roomCode = params.code;
   const userName = params.username;
-  const url = `${apiDomain}/add-player/${roomCode}/${userName}`;
+  const url = `${apiDomain}/add-player/${roomCode}/Tic-Tac-Toe/${userName}`;
   
   const response = await fetch(url);
   const resJson = await response.json();
 
   if(resJson.message === "Nickname is already in use!"){
-    return redirect(`/nick/${roomCode}/409`);
+    return redirect(`/nick/${roomCode}/Tic-Tac-Toe/409`);
   }
 
   if(resJson.message === "The Room is full" || response.status === 404){
     throw {erroMessage: resJson.message};
   }
 
-  const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'tic-tac-toe' } });
+  const socket = io(URL, { autoConnect: false, reconnection: false, query: { room: params.code, userName: params.username , rootype: 'Tic-Tac-Toe' } });
   return {...resJson, socket: socket,roomCode: roomCode, userName: userName};
   
 }
@@ -125,7 +125,7 @@ function TicTacToe() {
   }
 
   function shareButtonHandleClick(){
-    const url = `${appDomain}/nick/${roomCode}`;
+    const url = `${appDomain}/nick/${roomCode}/Tic-Tac-Toe`;
     navigator.clipboard.writeText(url);
   }
 

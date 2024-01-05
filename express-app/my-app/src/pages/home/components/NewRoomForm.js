@@ -125,7 +125,7 @@ export async function action(formData){
     const postJson = { method: "POST",  body: urlObj}
     const responseStatus = await fetch(url, postJson).then(response => response.status);
     if(responseStatus === 200 ){
-      return redirect(`/nick/${roomCode}`);
+      return redirect(`/nick/${roomCode}/${activeCard}`);
     }else {
       return {form : "NewRoomForm", message: "This room code alredy is in use!"};
     }
