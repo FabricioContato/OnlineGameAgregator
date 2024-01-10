@@ -105,6 +105,7 @@ app.get("*", (req, res) => {
 
 io.on("connection", async (socket) => {
   const roomType = socket.handshake.query.rootype;
+
   if(roomType === 'Tic-Tac-Toe'){
     await ticTacToeSocketHandler(socket, io);
   }
@@ -112,9 +113,6 @@ io.on("connection", async (socket) => {
     await checkersSocketHandler(socket, io);
 
   }
-  /* else if(socket.handshake.query.rootype === 'checkers'){
-    await ticTacToeSocketHandler(socket, io);
-  } */
 
 });
 

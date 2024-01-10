@@ -2,7 +2,11 @@ import React from "react";
 import brow from "./images/brow.png";
 import wood from "./images/wood.png";
 import whitePiece from "./images/white_piece.png";
+import whitePieceHighlight from "./images/white_piece_highlight.png";
+import redPieceHighlight from "./images/red_piece_highlight.png";
 import redPiece from "./images/red_piece.png";
+import yellowPiece from "./images/yellow.png";
+import greenPice from "./images/green.png";
 
 function Cell({ id, imageCode, handleClick }) {
     let style = {
@@ -25,6 +29,22 @@ function Cell({ id, imageCode, handleClick }) {
 
       case "whitePiece":
         imageUrl = whitePiece;
+        break;
+      
+      case "yellow":
+        imageUrl = yellowPiece;  
+        break;
+
+      case "green":
+        imageUrl = greenPice;
+        break;
+      
+      case "redPieceHighlight":
+        imageUrl = redPieceHighlight;
+        break;
+
+      case "whitePieceHighlight":
+        imageUrl = whitePieceHighlight;
         break;
     }
   
