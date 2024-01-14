@@ -88,6 +88,7 @@ const mockRows = [
     { id: "77", imageSimbleCode: "redPiece" },
   ],
 ];
+
 async function getNewStartCellsRowsList() {
   return JSON.parse(JSON.stringify(mockRows));
 }
@@ -173,6 +174,8 @@ async function createNewCheckersRoom(roomCode) {
     cellsRows: await getNewStartCellsRowsList(),
     playerOfTheTurn: null,
     players: [],
+    redPiecesNumber: 12,
+    whitePiecesNumber: 12,
     selectedPieceId: null,
     yellowPicesIds: [],
     highlightedPiecesIds: [],
@@ -345,11 +348,13 @@ async function setImageSimbleCodeById(roomJson, id, imageSimbleCode) {
   roomJson.cellsRows[rowIndex][cellIndex].imageSimbleCode = imageSimbleCode;
 }
 
-async function setImageSimbleCodeAsHighlightedById(roomJson, id){
+async function setImageSimbleCodeAsHighlightedById(roomJson, id) {
   const imageSimbleCode = await getImageSimbleCodeById(roomJson.cellsRows, id);
   const rowIndex = parseInt(id[0]);
   const cellIndex = parseInt(id[1]);
-  roomJson.cellsRows[rowIndex][cellIndex].imageSimbleCode = `${imageSimbleCode}Highlight`;
+  roomJson.cellsRows[rowIndex][
+    cellIndex
+  ].imageSimbleCode = `${imageSimbleCode}Highlight`;
 }
 
 async function isYellowPice(cellsRows, id) {
@@ -385,13 +390,20 @@ async function movePiece(roomJson, targetId) {
 
 async function doesPieceIdBelongToUser(roomJson, userName, id) {
   const imageSimbleCode = await getImageSimbleCodeById(roomJson.cellsRows, id);
-  ////console.log(imageSimbleCode);
+
+  if (!imageSimbleCode.includes("Piece")) {
+    return false;
+  }
+
   const playerPieceCode = await getPlayerPieceCode(roomJson.players, userName);
-  ////console.log(playerPieceCode);
+
   return (
+    imageSimbleCode.includes("white") === playerPieceCode.includes("white")
+  );
+  /* return (
     imageSimbleCode === playerPieceCode ||
     imageSimbleCode === playerPieceCode + "Highlight"
-  );
+  ); */
 }
 
 async function validIndexs(indexs) {
@@ -401,11 +413,8 @@ async function validIndexs(indexs) {
 async function setYellowPicesForMovement(roomJson, id) {
   const rowIndex = parseInt(id[0]);
   const cellIndex = parseInt(id[1]);
-  if (
-    ["whitePiece", "whitePieceHighlight"].includes(
-      await getImageSimbleCodeById(roomJson.cellsRows, id)
-    )
-  ) {
+  const imageSimbleCode = await getImageSimbleCodeById(roomJson.cellsRows, id);
+  if (["whitePiece", "whitePieceHighlight"].includes(imageSimbleCode)) {
     const bottomLeftArray = [rowIndex + 1, cellIndex - 1];
     const bottomRightArray = [rowIndex + 1, cellIndex + 1];
     if (await validIndexs(bottomLeftArray)) {
@@ -428,11 +437,51 @@ async function setYellowPicesForMovement(roomJson, id) {
         roomJson.yellowPicesIds.push(bottomRightId);
       }
     }
-  } else if (
-    ["redPiece", "redPieceHighlight"].includes(
-      await getImageSimbleCodeById(roomJson.cellsRows, id)
-    )
-  ) {
+  } else if (["redPiece", "redPieceHighlight"].includes(imageSimbleCode)) {
+    const topLeftArray = [rowIndex - 1, cellIndex - 1];
+    const topRightArray = [rowIndex - 1, cellIndex + 1];
+    if (await validIndexs(topLeftArray)) {
+      const topLeftId = topLeftArray.join("");
+      if (
+        (await getImageSimbleCodeById(roomJson.cellsRows, topLeftId)) === "wood"
+      ) {
+        await setImageSimbleCodeById(roomJson, topLeftId, "yellow");
+        roomJson.yellowPicesIds.push(topLeftId);
+      }
+    }
+    if (await validIndexs(topRightArray)) {
+      const topRightId = topRightArray.join("");
+      if (
+        (await getImageSimbleCodeById(roomJson.cellsRows, topRightId)) ===
+        "wood"
+      ) {
+        await setImageSimbleCodeById(roomJson, topRightId, "yellow");
+        roomJson.yellowPicesIds.push(topRightId);
+      }
+    }
+  } else if (imageSimbleCode.includes("Crown")) {
+    const bottomLeftArray = [rowIndex + 1, cellIndex - 1];
+    const bottomRightArray = [rowIndex + 1, cellIndex + 1];
+    if (await validIndexs(bottomLeftArray)) {
+      const bottomLeftId = bottomLeftArray.join("");
+      if (
+        (await getImageSimbleCodeById(roomJson.cellsRows, bottomLeftId)) ===
+        "wood"
+      ) {
+        await setImageSimbleCodeById(roomJson, bottomLeftId, "yellow");
+        roomJson.yellowPicesIds.push(bottomLeftId);
+      }
+    }
+    if (await validIndexs(bottomRightArray)) {
+      const bottomRightId = bottomRightArray.join("");
+      if (
+        (await getImageSimbleCodeById(roomJson.cellsRows, bottomRightId)) ===
+        "wood"
+      ) {
+        await setImageSimbleCodeById(roomJson, bottomRightId, "yellow");
+        roomJson.yellowPicesIds.push(bottomRightId);
+      }
+    }
     const topLeftArray = [rowIndex - 1, cellIndex - 1];
     const topRightArray = [rowIndex - 1, cellIndex + 1];
     if (await validIndexs(topLeftArray)) {
@@ -490,7 +539,8 @@ async function unsetHighlightedPieces(roomJson) {
     rowIndex = parseInt(id[0]);
     cellIndex = parseInt(id[1]);
     imageSimbleCode = roomJson.cellsRows[rowIndex][cellIndex].imageSimbleCode;
-    roomJson.cellsRows[rowIndex][cellIndex].imageSimbleCode = imageSimbleCode.replace("Highlight", "");
+    roomJson.cellsRows[rowIndex][cellIndex].imageSimbleCode =
+      imageSimbleCode.replace("Highlight", "");
   }
   roomJson.highlightedPiecesIds = [];
 }
@@ -533,14 +583,14 @@ async function setHghlightedPiecesForCatch(roomJson) {
     for (row of roomJson.cellsRows) {
       for (cell of row) {
         aux = aux + 1;
-        if (cell.imageSimbleCode === "whitePiece") {
+        if (cell.imageSimbleCode.includes("white")) {
           bottomLeftArr = await bottomLeftCoordinates(cell.id);
           if (
             (await validIndexs(bottomLeftArr.join(""))) &&
             (await getImageSimbleCodeById(
               roomJson.cellsRows,
               bottomLeftArr.join("")
-            )) === "redPiece"
+            )).includes("red")
           ) {
             bottomLeftArr = await bottomLeftCoordinates(bottomLeftArr.join(""));
             if (
@@ -550,13 +600,12 @@ async function setHghlightedPiecesForCatch(roomJson) {
                 bottomLeftArr.join("")
               )) === "wood"
             ) {
-              await setImageSimbleCodeById(
+              await setImageSimbleCodeAsHighlightedById(
                 roomJson,
-                cell.id,
-                "whitePieceHighlight"
+                cell.id
               );
               roomJson.highlightedPiecesIds.push(cell.id);
-              //console.log(cell.id);
+              continue;
             }
           }
           bottomRightArr = await bottomRightCoordinates(cell.id);
@@ -565,7 +614,7 @@ async function setHghlightedPiecesForCatch(roomJson) {
             (await getImageSimbleCodeById(
               roomJson.cellsRows,
               bottomRightArr.join("")
-            )) === "redPiece"
+            )).includes("red")
           ) {
             bottomRightArr = await bottomRightCoordinates(
               bottomRightArr.join("")
@@ -577,13 +626,62 @@ async function setHghlightedPiecesForCatch(roomJson) {
                 bottomRightArr.join("")
               )) === "wood"
             ) {
-              await setImageSimbleCodeById(
+              await setImageSimbleCodeAsHighlightedById(
                 roomJson,
-                cell.id,
-                "whitePieceHighlight"
+                cell.id
               );
               roomJson.highlightedPiecesIds.push(cell.id);
-              //console.log(cell.id);
+              continue;
+            }
+          }
+          if (cell.imageSimbleCode.includes("Crown")) {
+            topLeftArr = await topLeftCoordinates(cell.id);
+            if (
+              (await validIndexs(topLeftArr.join(""))) &&
+              (await getImageSimbleCodeById(
+                roomJson.cellsRows,
+                topLeftArr.join("")
+              )).includes("red")
+            ) {
+              topLeftArr = await topLeftCoordinates(topLeftArr.join(""));
+              if (
+                (await validIndexs(topLeftArr.join(""))) &&
+                (await getImageSimbleCodeById(
+                  roomJson.cellsRows,
+                  topLeftArr.join("")
+                )) === "wood"
+              ) {
+                await setImageSimbleCodeAsHighlightedById(
+                  roomJson,
+                  cell.id
+                );
+                roomJson.highlightedPiecesIds.push(cell.id);
+                continue;
+              }
+            }
+            topRightArr = await topRightCoordinates(cell.id);
+            if (
+              (await validIndexs(topRightArr.join(""))) &&
+              (await getImageSimbleCodeById(
+                roomJson.cellsRows,
+                topRightArr.join("")
+              )).includes("red")
+            ) {
+              topRightArr = await topRightCoordinates(topRightArr.join(""));
+              if (
+                (await validIndexs(topRightArr.join(""))) &&
+                (await getImageSimbleCodeById(
+                  roomJson.cellsRows,
+                  topRightArr.join("")
+                )) === "wood"
+              ) {
+                await setImageSimbleCodeAsHighlightedById(
+                  roomJson,
+                  cell.id
+                );
+                roomJson.highlightedPiecesIds.push(cell.id);
+                continue;
+              }
             }
           }
         }
@@ -596,14 +694,14 @@ async function setHghlightedPiecesForCatch(roomJson) {
     for (row of roomJson.cellsRows) {
       for (cell of row) {
         aux = aux + 1;
-        if (cell.imageSimbleCode === "redPiece") {
+        if (cell.imageSimbleCode.includes("red")) {
           topLeftArr = await topLeftCoordinates(cell.id);
           if (
             (await validIndexs(topLeftArr.join(""))) &&
             (await getImageSimbleCodeById(
               roomJson.cellsRows,
               topLeftArr.join("")
-            )) === "whitePiece"
+            )).includes("white")
           ) {
             topLeftArr = await topLeftCoordinates(topLeftArr.join(""));
             if (
@@ -613,13 +711,12 @@ async function setHghlightedPiecesForCatch(roomJson) {
                 topLeftArr.join("")
               )) === "wood"
             ) {
-              await setImageSimbleCodeById(
+              await setImageSimbleCodeAsHighlightedById(
                 roomJson,
-                cell.id,
-                "redPieceHighlight"
+                cell.id
               );
               roomJson.highlightedPiecesIds.push(cell.id);
-              //console.log(cell.id);
+              continue;
             }
           }
           topRightArr = await topRightCoordinates(cell.id);
@@ -628,7 +725,7 @@ async function setHghlightedPiecesForCatch(roomJson) {
             (await getImageSimbleCodeById(
               roomJson.cellsRows,
               topRightArr.join("")
-            )) === "whitePiece"
+            )).includes("white")
           ) {
             topRightArr = await topRightCoordinates(topRightArr.join(""));
             if (
@@ -638,13 +735,66 @@ async function setHghlightedPiecesForCatch(roomJson) {
                 topRightArr.join("")
               )) === "wood"
             ) {
-              await setImageSimbleCodeById(
+              await setImageSimbleCodeAsHighlightedById(
                 roomJson,
-                cell.id,
-                "redPieceHighlight"
+                cell.id
               );
               roomJson.highlightedPiecesIds.push(cell.id);
-              //console.log(cell.id);
+              continue;
+            }
+          }
+          if (cell.imageSimbleCode.includes("Crown")) {
+            bottomLeftArr = await bottomLeftCoordinates(cell.id);
+            if (
+              (await validIndexs(bottomLeftArr.join(""))) &&
+              (await getImageSimbleCodeById(
+                roomJson.cellsRows,
+                bottomLeftArr.join("")
+              )).includes("white")
+            ) {
+              bottomLeftArr = await bottomLeftCoordinates(
+                bottomLeftArr.join("")
+              );
+              if (
+                (await validIndexs(bottomLeftArr.join(""))) &&
+                (await getImageSimbleCodeById(
+                  roomJson.cellsRows,
+                  bottomLeftArr.join("")
+                )) === "wood"
+              ) {
+                await setImageSimbleCodeAsHighlightedById(
+                  roomJson,
+                  cell.id
+                );
+                roomJson.highlightedPiecesIds.push(cell.id);
+                continue;
+              }
+            }
+            bottomRightArr = await bottomRightCoordinates(cell.id);
+            if (
+              (await validIndexs(bottomRightArr.join(""))) &&
+              (await getImageSimbleCodeById(
+                roomJson.cellsRows,
+                bottomRightArr.join("")
+              )).includes("white")
+            ) {
+              bottomRightArr = await bottomRightCoordinates(
+                bottomRightArr.join("")
+              );
+              if (
+                (await validIndexs(bottomRightArr.join(""))) &&
+                (await getImageSimbleCodeById(
+                  roomJson.cellsRows,
+                  bottomRightArr.join("")
+                )) === "wood"
+              ) {
+                await setImageSimbleCodeAsHighlightedById(
+                  roomJson,
+                  cell.id
+                );
+                roomJson.highlightedPiecesIds.push(cell.id);
+                continue;
+              }
             }
           }
         }
@@ -656,7 +806,7 @@ async function setHghlightedPiecesForCatch(roomJson) {
 
 async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
   let greenPiecesSetCounter = 0;
-  
+
   const imageSimbleCode = await getImageSimbleCodeById(
     roomJson.cellsRows,
     highlightedPieceId
@@ -669,7 +819,7 @@ async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
       (await getImageSimbleCodeById(
         roomJson.cellsRows,
         bottomLeftArr.join("")
-      )) === "redPiece"
+      )).includes("red")
     ) {
       bottomLeftArr = await bottomLeftCoordinates(bottomLeftArr.join(""));
       if (
@@ -691,7 +841,7 @@ async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
       (await getImageSimbleCodeById(
         roomJson.cellsRows,
         bottomRightArr.join("")
-      )) === "redPiece"
+      )).includes("red")
     ) {
       bottomRightArr = await bottomRightCoordinates(bottomRightArr.join(""));
       if (
@@ -707,6 +857,52 @@ async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
         //console.log(cell.id);
       }
     }
+    if (imageSimbleCode.includes("Crown")) {
+      topLeftArr = await topLeftCoordinates(highlightedPieceId);
+      if (
+        (await validIndexs(topLeftArr.join(""))) &&
+        (await getImageSimbleCodeById(
+          roomJson.cellsRows,
+          topLeftArr.join("")
+        )).includes("red")
+      ) {
+        topLeftArr = await topLeftCoordinates(topLeftArr.join(""));
+        if (
+          (await validIndexs(topLeftArr.join(""))) &&
+          (await getImageSimbleCodeById(
+            roomJson.cellsRows,
+            topLeftArr.join("")
+          )) === "wood"
+        ) {
+          await setImageSimbleCodeById(roomJson, topLeftArr, "green");
+          roomJson.greenPiecesIds.push(topLeftArr.join(""));
+          greenPiecesSetCounter += 1;
+          //console.log(cell.id);
+        }
+      }
+      topRightArr = await topRightCoordinates(highlightedPieceId);
+      if (
+        (await validIndexs(topRightArr.join(""))) &&
+        (await getImageSimbleCodeById(
+          roomJson.cellsRows,
+          topRightArr.join("")
+        )).includes("red")
+      ) {
+        topRightArr = await topRightCoordinates(topRightArr.join(""));
+        if (
+          (await validIndexs(topRightArr.join(""))) &&
+          (await getImageSimbleCodeById(
+            roomJson.cellsRows,
+            topRightArr.join("")
+          )) === "wood"
+        ) {
+          await setImageSimbleCodeById(roomJson, topRightArr, "green");
+          roomJson.greenPiecesIds.push(topRightArr.join(""));
+          greenPiecesSetCounter += 1;
+          //console.log(cell.id);
+        }
+      }
+    }
   }
   if (imageSimbleCode.includes("red")) {
     topLeftArr = await topLeftCoordinates(highlightedPieceId);
@@ -715,7 +911,7 @@ async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
       (await getImageSimbleCodeById(
         roomJson.cellsRows,
         topLeftArr.join("")
-      )) === "whitePiece"
+      )).includes("white")
     ) {
       topLeftArr = await topLeftCoordinates(topLeftArr.join(""));
       if (
@@ -737,7 +933,7 @@ async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
       (await getImageSimbleCodeById(
         roomJson.cellsRows,
         topRightArr.join("")
-      )) === "whitePiece"
+      )).includes("white")
     ) {
       topRightArr = await topRightCoordinates(topRightArr.join(""));
       if (
@@ -751,6 +947,56 @@ async function setGreenPieceForCatchById(roomJson, highlightedPieceId) {
         roomJson.greenPiecesIds.push(topRightArr.join(""));
         greenPiecesSetCounter += 1;
         //console.log(cell.id);
+      }
+    }
+    if (imageSimbleCode.includes("Crown")) {
+      let bottomLeftArr = await bottomLeftCoordinates(highlightedPieceId);
+      if (
+        (await validIndexs(bottomLeftArr.join(""))) &&
+        (await getImageSimbleCodeById(
+          roomJson.cellsRows,
+          bottomLeftArr.join("")
+        )).includes("white")
+      ) {
+        bottomLeftArr = await bottomLeftCoordinates(bottomLeftArr.join(""));
+        if (
+          (await validIndexs(bottomLeftArr.join(""))) &&
+          (await getImageSimbleCodeById(
+            roomJson.cellsRows,
+            bottomLeftArr.join("")
+          )) === "wood"
+        ) {
+          await setImageSimbleCodeById(
+            roomJson,
+            bottomLeftArr.join(""),
+            "green"
+          );
+          roomJson.greenPiecesIds.push(bottomLeftArr.join(""));
+          greenPiecesSetCounter += 1;
+          //console.log(cell.id);
+        }
+      }
+      bottomRightArr = await bottomRightCoordinates(highlightedPieceId);
+      if (
+        (await validIndexs(bottomRightArr.join(""))) &&
+        (await getImageSimbleCodeById(
+          roomJson.cellsRows,
+          bottomRightArr.join("")
+        )).includes("white")
+      ) {
+        bottomRightArr = await bottomRightCoordinates(bottomRightArr.join(""));
+        if (
+          (await validIndexs(bottomRightArr.join(""))) &&
+          (await getImageSimbleCodeById(
+            roomJson.cellsRows,
+            bottomRightArr.join("")
+          )) === "wood"
+        ) {
+          await setImageSimbleCodeById(roomJson, bottomRightArr, "green");
+          roomJson.greenPiecesIds.push(bottomRightArr.join(""));
+          greenPiecesSetCounter += 1;
+          //console.log(cell.id);
+        }
       }
     }
   }
@@ -801,13 +1047,154 @@ async function catchPiece(roomJson, id) {
     roomJson.cellsRows,
     selectedPieceId
   );
-  /* const catchedPieceIdImageSimbleCode = await getImageSimbleCodeById(catchedPieceId);
-  const targetIdPieceImageSimbleCode = await getImageSimbleCodeById(id); */
+
+  const catchedPieceIdImageSimbleCode = await getImageSimbleCodeById(roomJson.cellsRows ,catchedPieceId);
+  if(catchedPieceIdImageSimbleCode.includes("white")){
+    roomJson.whitePiecesNumber -= 1;
+  }else if(catchedPieceIdImageSimbleCode.includes("red")) {
+    roomJson.redPiecesNumber -= 1;
+  }
 
   await setImageSimbleCodeById(roomJson, catchedPieceId, "wood");
   await setImageSimbleCodeById(roomJson, selectedPieceId, "wood");
   await setImageSimbleCodeById(roomJson, id, selectedPieceImageSimbleCode);
-  roomJson.greenPiecesIds = [];
+  const index = roomJson.greenPiecesIds.indexOf(id);
+  roomJson.greenPiecesIds.splice(index, 1);
+
+}
+
+async function setPieceAsCrown(roomJson, id) {
+  const rowIndex = parseInt(id[0]);
+  const cellIndex = parseInt(id[1]);
+
+  if (rowIndex !== 0 && rowIndex !== 7) {
+    return false;
+  }
+
+  const imageSimbleCode = await getImageSimbleCodeById(roomJson.cellsRows, id);
+
+  if (!imageSimbleCode.includes("Piece")) {
+    return false;
+  }
+
+  if (imageSimbleCode.includes("Crown")) {
+    return false;
+  }
+
+  await setImageSimbleCodeById(roomJson, id, `${imageSimbleCode}Crown`);
+
+  return true;
+}
+
+async function getOponentUserName(roomJson){
+  for (let player of roomJson.players) {
+    if (player.userName !== roomJson.playerOfTheTurn) {
+      return player.userName;
+    }
+  }
+}
+
+async function isPlayerOutOfPieces(roomJson, playerUserName){
+  const playerImageSimbleCode = await getPlayerPieceCode(roomJson.players, playerUserName);
+  
+  if(playerImageSimbleCode === "whitePiece"){
+    return roomJson.whitePiecesNumber === 0;
+  }
+  
+  if(playerImageSimbleCode === "redPiece"){
+    return roomJson.redPiecesNumber === 0;
+  }
+}
+
+async function checkIfPieceCanMove(cellsRows, cell){
+  const imageSimbleCode = cell.imageSimbleCode;
+  const id = cell.id;
+
+  if(imageSimbleCode.includes("Crown")){
+    const bottomLeftArr = await bottomLeftCoordinates(id);
+    const bottomRightArr = await bottomRightCoordinates(id);
+    const topLeftArr = await topLeftCoordinates(id);
+    const topRightArr = await topRightCoordinates(id);
+
+    if(await validIndexs(bottomLeftArr)){
+      if(await getImageSimbleCodeById(cellsRows, bottomLeftArr) === "wood"){
+        return true;
+      }
+    }
+    if(await validIndexs(bottomRightArr)){
+      if(await getImageSimbleCodeById(cellsRows, bottomRightArr) === "wood"){
+        return true;
+      }
+    }
+    if(await validIndexs(topLeftArr)){
+      if(await getImageSimbleCodeById(cellsRows, topLeftArr) === "wood"){
+        return true;
+      }
+    }
+    if(await validIndexs(topRightArr)){
+      if(await getImageSimbleCodeById(cellsRows, topRightArr) === "wood"){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  if(imageSimbleCode.includes("white")){
+    const bottomLeftArr = await bottomLeftCoordinates(id);
+    const bottomRightArr = await bottomRightCoordinates(id);
+
+    if(await validIndexs(bottomLeftArr)){
+      if(await getImageSimbleCodeById(cellsRows, bottomLeftArr) === "wood"){
+        return true;
+      }
+    }
+    if(await validIndexs(bottomRightArr)){
+      if(await getImageSimbleCodeById(cellsRows, bottomRightArr) === "wood"){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  if(imageSimbleCode.includes("red")){
+    const topLeftArr = await topLeftCoordinates(id);
+    const topRightArr = await topRightCoordinates(id);
+
+    if(await validIndexs(topLeftArr)){
+      if(await getImageSimbleCodeById(cellsRows, topLeftArr) === "wood"){
+        return true;
+      }
+    }
+    if(await validIndexs(topRightArr)){
+      if(await getImageSimbleCodeById(cellsRows, topRightArr) === "wood"){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  return false;
+
+}
+
+async function isPlayerLocked(roomJson, playerUserName){
+  const imageSimbleCode = await getPlayerPieceCode(roomJson.players, playerUserName);
+  const color = imageSimbleCode.includes("white") ? "white" : "red";
+
+  for(row of roomJson.cellsRows){
+    for(cell of row){
+      if(cell.imageSimbleCode.includes(color)){
+        if(await checkIfPieceCanMove(roomJson.cellsRows, cell)){
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 async function connection(socket, io) {
@@ -920,17 +1307,30 @@ async function checkersSocketHandler(socket, io) {
     if (await isGreenPiece(roomJson.cellsRows, cellId)) {
       await unsetHighlightedPieces(roomJson);
       await catchPiece(roomJson, cellId);
+      await unsetGreenPiecesForCatch(roomJson);
+      await setPieceAsCrown(roomJson, cellId);
 
-      if(await setGreenPieceForCatchById(roomJson, cellId)){
-        await setImageSimbleCodeAsHighlightedById(roomJson ,cellId);
+      if (await setGreenPieceForCatchById(roomJson, cellId)) {
+        await setImageSimbleCodeAsHighlightedById(roomJson, cellId);
         roomJson.highlightedPiecesIds.push(cellId);
         roomJson.selectedPieceId = cellId;
-      }
-      else {
+      } else {
+        if(await isPlayerOutOfPieces(roomJson, await getOponentUserName(roomJson)) || roomJson.highlightedPiecesIds.length === 0 && await isPlayerLocked(roomJson, await getOponentUserName(roomJson))){
+          const winnerPlayer = roomJson.playerOfTheTurn;
+          roomJson.state = "finished";
+          roomJson.players = await setPlayersSatate(roomJson.players, "UN-READY");
+          roomJson.playerOfTheTurn = await getRandomPlayerOfTheTurn(roomJson.players);
+          roomJson.selectedPieceId = null;
+          io.to(room).emit("winner-player", roomJson.cellsRows, winnerPlayer, roomJson.state, roomJson.players);
+          roomJson.cellsRows = await getNewStartCellsRowsList();
+          await changePlayerOfTheTurn(roomJson);
+          return null;
+        }
         await changePlayerOfTheTurn(roomJson);
+        await setHghlightedPiecesForCatch(roomJson);
         roomJson.selectedPieceId = null;
       }
-      
+
       await jsonStringIntoRedis(room, roomJson);
       io.to(room).emit(
         "player-click",
@@ -948,8 +1348,20 @@ async function checkersSocketHandler(socket, io) {
 
     if (await isYellowPice(roomJson.cellsRows, cellId)) {
       await movePiece(roomJson, cellId);
+      await setPieceAsCrown(roomJson, cellId);
       await changePlayerOfTheTurn(roomJson);
       await setHghlightedPiecesForCatch(roomJson);
+      if(roomJson.highlightedPiecesIds.length === 0 && await isPlayerLocked(roomJson, roomJson.playerOfTheTurn)){
+        const winnerPlayer = await getOponentUserName(roomJson);
+        roomJson.state = "finished";
+        roomJson.players = await setPlayersSatate(roomJson.players, "UN-READY");
+        roomJson.playerOfTheTurn = await getRandomPlayerOfTheTurn(roomJson.players);
+        roomJson.selectedPieceId = null;
+        io.to(room).emit("winner-player", roomJson.cellsRows, winnerPlayer, roomJson.state, roomJson.players);
+        roomJson.cellsRows = await getNewStartCellsRowsList();
+        await jsonStringIntoRedis(room, roomJson);
+        return null;
+      }
       await jsonStringIntoRedis(room, roomJson);
       io.to(room).emit(
         "player-click",
@@ -970,7 +1382,6 @@ async function checkersSocketHandler(socket, io) {
       );
     }
 
-    //console.log(await doesPieceIdBelongToUser(roomJson, userName, cellId));
     if (!(await doesPieceIdBelongToUser(roomJson, userName, cellId))) {
       return null;
     }

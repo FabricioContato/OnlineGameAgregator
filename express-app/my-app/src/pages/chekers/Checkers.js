@@ -36,6 +36,7 @@ function Checkers() {
   React.useEffect(() => {
 
     function cellClickHandler(cellsRows, playerOfTheTurn) {
+      console.log(cellsRows);
       setCellsRows(cellsRows);
       setPlayerOfTheTurn(playerOfTheTurn);
     }
