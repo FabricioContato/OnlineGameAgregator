@@ -170,7 +170,7 @@ async function winCondition(cellsRows, players) {
 
 async function createNewCheckersRoom(roomCode) {
   roomJson = {
-    roomType: "checkers",
+    roomType: "Checkers",
     cellsRows: await getNewStartCellsRowsList(),
     playerOfTheTurn: null,
     players: [],

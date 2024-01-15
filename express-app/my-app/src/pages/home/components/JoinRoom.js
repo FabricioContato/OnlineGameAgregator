@@ -14,8 +14,8 @@ export async function action(formData){
   if(response.status !== 200){
     return {form:"JoinRoomForm", message: "Room code not found!"};
   }
-
-  const url = `/nick/${roomCode}`;
+  const resJson = await response.json();
+  const url = `/nick/${roomCode}/${resJson.roomType}`;
   return redirect(url);
 
 }

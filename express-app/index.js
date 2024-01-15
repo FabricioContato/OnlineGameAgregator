@@ -56,7 +56,7 @@ app.get("/room/:code", async (req, res) => {
     res.sendStatus(NOT_FOUND_STATUS).end();
   
   }else{
-    res.sendStatus(OK_STATUS).end();
+    res.json({roomType: roomJson.roomType});
   
   }
 
